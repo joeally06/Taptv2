@@ -44,6 +44,12 @@ try {
       registration_id TEXT NOT NULL,
       first_name TEXT NOT NULL,
       last_name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      city TEXT NOT NULL,
+      state TEXT NOT NULL,
+      zip TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
       FOREIGN KEY (registration_id) REFERENCES registrations (id)
     )
   `);
@@ -233,7 +239,16 @@ export const getLatestConference = async () => {
 
 export const createRegistration = async (data: {
   organization: string;
-  attendees: Array<{ firstName: string; lastName: string }>;
+  attendees: Array<{
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    email: string;
+    phone: string;
+  }>;
   totalAmount: number;
   conferenceId: string;
 }) => {
@@ -262,24 +277,31 @@ export const createRegistration = async (data: {
         data.totalAmount,
         'conf-2025'
       ]
-    });
-
-    // Insert attendees
-    for (let i = 0; i < data.attendees.length; i++) {
-      const attendee = data.attendees[i];
-      const attendeeId = `att-${registrationId}-${i + 1}`;
-      await db.execute({
-        sql: `
-          INSERT INTO attendees (id, registration_id, first_name, last_name)
-          VALUES (?, ?, ?, ?)
-        `,
-        args: [
-          attendeeId,
-          registrationId,
-          attendee.firstName,
-          attendee.lastName
-        ]
-      });
+    });      // Insert attendees
+      for (let i = 0; i < data.attendees.length; i++) {
+        const attendee = data.attendees[i];
+        const attendeeId = `att-${registrationId}-${i + 1}`;
+        await db.execute({
+          sql: `
+            INSERT INTO attendees (
+              id, registration_id, first_name, last_name,
+              address, city, state, zip, email, phone
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          args: [
+            attendeeId,
+            registrationId,
+            attendee.firstName,
+            attendee.lastName,
+            attendee.address,
+            attendee.city,
+            attendee.state,
+            attendee.zip,
+            attendee.email,
+            attendee.phone
+          ]
+        });
     }
 
     // Commit transaction
@@ -520,9 +542,18 @@ export const authenticateUser = async (email: string, password: string) => {
 // Duplicate checking functions
 export const checkDuplicateRegistration = async (data: {
   organization: string;
-  attendees: Array<{ firstName: string; lastName: string }>;
+  attendees: Array<{ 
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    email: string;
+    phone: string;
+  }>;
 }) => {
-  // Check for same organization registering same attendee
+  // Check for same organization registering same attendee with same address
   for (const attendee of data.attendees) {
     const result = await db.execute({
       sql: `
@@ -532,12 +563,24 @@ export const checkDuplicateRegistration = async (data: {
         WHERE r.organization = ?
         AND a.first_name = ? 
         AND a.last_name = ?
+        AND a.address = ?
+        AND a.city = ?
+        AND a.state = ?
+        AND a.zip = ?
       `,
-      args: [data.organization, attendee.firstName, attendee.lastName]
+      args: [
+        data.organization,
+        attendee.firstName,
+        attendee.lastName,
+        attendee.address,
+        attendee.city,
+        attendee.state,
+        attendee.zip
+      ]
     });
     
     if (result.rows.length > 0) {
-      throw new Error(`${attendee.firstName} ${attendee.lastName} is already registered for this organization`);
+      throw new Error(`${attendee.firstName} ${attendee.lastName} is already registered with the same address for this organization. If this is a different person with the same name, please use a different address.`);
     }
   }
 };

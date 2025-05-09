@@ -336,6 +336,46 @@ const states = [
     }
   }
 
+  function resetFormAfterDuplicate(organization: string) {
+    // Keep organization value
+    const orgInput = form?.querySelector('[name="organization"]') as HTMLInputElement;
+    if (orgInput) {
+      orgInput.value = organization;
+    }
+
+    // Hide all attendee sections except the first one
+    const attendeeSections = Array.from(document.querySelectorAll('.attendee-section'));
+    attendeeSections.forEach((section, index) => {
+      if (index === 0) {
+        section.classList.remove('hidden');
+        // Clear first attendee's fields
+        const inputs = section.querySelectorAll('input, select');
+        inputs.forEach(input => {
+          const inputElem = input as HTMLInputElement | HTMLSelectElement;
+          inputElem.value = inputElem.name.includes('State') ? 'TN' : '';
+          inputElem.disabled = false;
+          inputElem.required = true;
+        });
+      } else {
+        section.classList.add('hidden');
+        // Clear and reset other attendees
+        const inputs = section.querySelectorAll('input, select');
+        inputs.forEach(input => {
+          const inputElem = input as HTMLInputElement | HTMLSelectElement;
+          inputElem.value = inputElem.name.includes('State') ? 'TN' : '';
+          inputElem.disabled = false;
+          inputElem.required = false;
+        });
+      }
+    });
+
+    // Update UI elements
+    updateTotalAmount(1);
+    if (addAttendeeBtn) {
+      addAttendeeBtn.disabled = false;
+    }
+  }
+
   function updateTotalAmount(attendeeCount: number) {
     const total = attendeeCount * PRICE_PER_ATTENDEE;
     if (totalAmountSpan) {
@@ -399,9 +439,11 @@ const states = [
       if (!input || !input.value.trim()) {
         return null;
       }
-      data[field.toLowerCase()] = input.value.trim();
+      // Convert to camelCase key (e.g., FirstName -> firstName)
+      const key = field.charAt(0).toLowerCase() + field.slice(1);
+      data[key] = input.value.trim();
     }
-
+    
     return data;
   }
 
@@ -431,7 +473,7 @@ const states = [
         attendeeDiv.className = 'print-attendee';
         attendeeDiv.innerHTML = `
           <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Attendee ${index + 1}</h2>
-          <div class="print-field"><strong>Name:</strong> ${attendeeData.firstname} ${attendeeData.lastname}</div>
+          <div class="print-field"><strong>Name:</strong> ${attendeeData.firstName} ${attendeeData.lastName}</div>
           <div class="print-field"><strong>Address:</strong> ${attendeeData.address}</div>
           <div class="print-field"><strong>City:</strong> ${attendeeData.city}</div>
           <div class="print-field"><strong>State:</strong> ${attendeeData.state}</div>
@@ -582,12 +624,18 @@ const states = [
       window.location.href = '/registration-success';
     } catch (error) {
       console.error('Registration error:', error);
-      showError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      showError(errorMessage);
       
       const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       if (submitButton) {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit Registration';
+      }
+
+      // If it's a duplicate registration, reset the form but keep the organization
+      if (error instanceof Error && error.message.includes('already registered')) {
+        resetFormAfterDuplicate(form.querySelector('[name="organization"]')?.value || '');
       }
     }
   });
