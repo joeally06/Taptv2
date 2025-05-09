@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const data = JSON.parse(body);
     
-    // Basic validation
+    // Enhanced validation including address fields
     if (!data?.organization || !Array.isArray(data?.attendees) || !data?.totalAmount) {
       return new Response(
         JSON.stringify({ 
@@ -34,12 +34,32 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Format data for database
+    // Validate each attendee has required fields
+    const invalidAttendees = data.attendees.some((att: any) => {
+      return !att.firstName || !att.lastName || !att.address || 
+             !att.city || !att.state || !att.zip;
+    });
+
+    if (invalidAttendees) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'All attendees must have firstName, lastName, address, city, state, and zip'
+        }),
+        { status: 400, headers }
+      );
+    }
+
+    // Format data for database with complete attendee information
     const registrationData = {
       organization: data.organization,
       attendees: data.attendees.map((att: any) => ({
         firstName: att.firstName,
-        lastName: att.lastName
+        lastName: att.lastName,
+        address: att.address,
+        city: att.city,
+        state: att.state,
+        zip: att.zip
       })),
       totalAmount: Number(data.totalAmount),
       conferenceId: 'conf-2025'
