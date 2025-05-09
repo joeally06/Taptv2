@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client';
+import bcrypt from 'bcryptjs';
 
 const db = createClient({
   url: 'file:conference.db'
@@ -254,6 +255,25 @@ export const createRegistration = async (data: {
 }) => {
   console.log('Creating registration with data:', data);
   
+  // Validate all required fields are present and not undefined
+  if (!data.organization) {
+    throw new Error('Organization is required');
+  }
+
+  if (!Array.isArray(data.attendees) || data.attendees.length === 0) {
+    throw new Error('At least one attendee is required');
+  }
+
+  // Validate each attendee has all required fields
+  for (const attendee of data.attendees) {
+    const requiredFields = ['firstName', 'lastName', 'address', 'city', 'state', 'zip', 'email', 'phone'];
+    for (const field of requiredFields) {
+      if (!attendee[field as keyof typeof attendee]) {
+        throw new Error(`Attendee ${field} is required`);
+      }
+    }
+  }
+  
   // Check for duplicates
   await checkDuplicateRegistration(data);
   
@@ -275,33 +295,43 @@ export const createRegistration = async (data: {
         data.organization,
         data.attendees.length,
         data.totalAmount,
-        'conf-2025'
+        data.conferenceId
       ]
-    });      // Insert attendees
-      for (let i = 0; i < data.attendees.length; i++) {
-        const attendee = data.attendees[i];
-        const attendeeId = `att-${registrationId}-${i + 1}`;
-        await db.execute({
-          sql: `
-            INSERT INTO attendees (
-              id, registration_id, first_name, last_name,
-              address, city, state, zip, email, phone
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
-          args: [
-            attendeeId,
-            registrationId,
-            attendee.firstName,
-            attendee.lastName,
-            attendee.address,
-            attendee.city,
-            attendee.state,
-            attendee.zip,
-            attendee.email,
-            attendee.phone
-          ]
-        });
+    });
+
+    // Insert attendees
+    for (let i = 0; i < data.attendees.length; i++) {
+      const attendee = data.attendees[i];
+      const attendeeId = `att-${registrationId}-${i + 1}`;
+      
+      // Log the attendee data before insertion
+      console.log('Inserting attendee:', {
+        id: attendeeId,
+        registration_id: registrationId,
+        ...attendee
+      });
+
+      await db.execute({
+        sql: `
+          INSERT INTO attendees (
+            id, registration_id, first_name, last_name,
+            address, city, state, zip, email, phone
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          attendeeId,
+          registrationId,
+          attendee.firstName,
+          attendee.lastName,
+          attendee.address,
+          attendee.city,
+          attendee.state,
+          attendee.zip,
+          attendee.email,
+          attendee.phone
+        ]
+      });
     }
 
     // Commit transaction
