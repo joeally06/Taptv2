@@ -204,7 +204,7 @@ const states = [
                         placeholder="123-456-7890"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                         maxlength="12"
-                        onkeyup="formatPhoneNumber(this)"
+                        oninput="formatPhoneNumber(this)"
                       />
                     </div>
                   </div>
@@ -314,17 +314,8 @@ const states = [
   </div>
 </Layout>
 
-<script>
-  const form = document.getElementById('registration-form') as HTMLFormElement;
-  const addAttendeeBtn = document.getElementById('add-attendee');
-  const attendeeCountSpan = document.getElementById('attendee-count');
-  const totalAmountSection = document.getElementById('total-amount-section');
-  const totalAmountSpan = document.getElementById('total-amount');
-  const errorMessageDiv = document.getElementById('error-message');
-  const PRICE_PER_ATTENDEE = 175;
-  const MAX_ATTENDEES = 4;
-
-  function formatPhoneNumber(input: HTMLInputElement) {
+<script is:inline>
+  function formatPhoneNumber(input) {
     let value = input.value.replace(/\D/g, '');
     if (value.length > 0) {
       if (value.length <= 3) {
@@ -336,11 +327,17 @@ const states = [
       }
     }
   }
+</script>
 
-  // Add event listeners to all phone inputs
-  document.querySelectorAll('input[type="tel"]').forEach(input => {
-    input.addEventListener('input', (e) => formatPhoneNumber(e.target as HTMLInputElement));
-  });
+<script>
+  const form = document.getElementById('registration-form') as HTMLFormElement;
+  const addAttendeeBtn = document.getElementById('add-attendee');
+  const attendeeCountSpan = document.getElementById('attendee-count');
+  const totalAmountSection = document.getElementById('total-amount-section');
+  const totalAmountSpan = document.getElementById('total-amount');
+  const errorMessageDiv = document.getElementById('error-message');
+  const PRICE_PER_ATTENDEE = 175;
+  const MAX_ATTENDEES = 4;
 
   function showError(message: string) {
     if (errorMessageDiv) {
