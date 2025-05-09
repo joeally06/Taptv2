@@ -37,14 +37,14 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate each attendee has required fields
     const invalidAttendees = data.attendees.some((att: any) => {
       return !att.firstName || !att.lastName || !att.address || 
-             !att.city || !att.state || !att.zip;
+             !att.city || !att.state || !att.zip || !att.email || !att.phone;
     });
 
     if (invalidAttendees) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'All attendees must have firstName, lastName, address, city, state, and zip'
+          error: 'All attendees must have firstName, lastName, address, city, state, zip, email, and phone'
         }),
         { status: 400, headers }
       );
@@ -59,7 +59,9 @@ export const POST: APIRoute = async ({ request }) => {
         address: att.address,
         city: att.city,
         state: att.state,
-        zip: att.zip
+        zip: att.zip,
+        email: att.email,
+        phone: att.phone
       })),
       totalAmount: Number(data.totalAmount),
       conferenceId: 'conf-2025'
