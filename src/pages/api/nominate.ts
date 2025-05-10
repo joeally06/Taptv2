@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createHallOfFameNomination } from '../../../lib/db.js';
+import { createHallOfFameNomination } from '../../lib/db.js';
 
 interface NominationData {
   nomineeName: string;
@@ -26,7 +26,9 @@ export const POST: APIRoute = async ({ request }) => {
       'nominatorName',
       'nominatorEmail',
       'nominatorPhone'
-    ];    const missingFields = requiredFields.filter(field => {
+    ];
+    
+    const missingFields = requiredFields.filter(field => {
       const value = data[field];
       const isInvalid = value === undefined || value === null || value === '';
       if (isInvalid) {
@@ -65,7 +67,9 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({ error: 'Phone number must be in format: 123-456-7890' }),
         { status: 400, headers }
       );
-    }    console.log('Submitting nomination with data:', data);
+    }
+
+    console.log('Submitting nomination with data:', data);
     const result = await createHallOfFameNomination(data);
     console.log('Nomination successful:', result);
     

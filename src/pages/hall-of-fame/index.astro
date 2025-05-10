@@ -1,5 +1,5 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from '../../layouts/Layout.astro';
 ---
 
 <Layout title="Hall of Fame Nomination">
@@ -113,7 +113,7 @@ import Layout from '../layouts/Layout.astro';
     };
 
     try {
-      const response = await fetch('/api/nominate', {
+      const response = await fetch('/api/hall-of-fame/nominate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -124,7 +124,7 @@ import Layout from '../layouts/Layout.astro';
         throw new Error(error.error || 'Failed to submit nomination');
       }
 
-      window.location.href = '/nomination-success';
+      window.location.href = '/hall-of-fame/success';
     } catch (error) {
       if (errorDiv) {
         errorDiv.textContent = error instanceof Error ? error.message : 'Failed to submit nomination';

@@ -211,6 +211,54 @@ export async function createRegistration(data: {
   }
 }
 
+export async function createHallOfFameNomination(data: {
+  nomineeName: string;
+  district: string;
+  yearsOfService: number;
+  nominatorName: string;
+  nominatorEmail: string;
+  nominatorPhone: string;
+}) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const nominationId = 'hof-' + Math.random().toString(36).substr(2, 9);
+    await client.query(`      CREATE TABLE IF NOT EXISTS hall_of_fame_nominations (
+        id TEXT PRIMARY KEY,
+        nominee_name TEXT NOT NULL,
+        district TEXT NOT NULL,
+        years_of_service INTEGER NOT NULL,
+        nominator_name TEXT NOT NULL,
+        nominator_email TEXT NOT NULL,
+        nominator_phone TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);    await client.query(`
+      INSERT INTO hall_of_fame_nominations (
+        id, nominee_name, district, years_of_service,
+        nominator_name, nominator_email, nominator_phone
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [      nominationId,
+      data.nomineeName,
+      data.district,
+      data.yearsOfService,
+      data.nominatorName,
+      data.nominatorEmail,
+      data.nominatorPhone
+    ]);
+
+    await client.query('COMMIT');
+    return { nominationId };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 // Initialize database on startup
 await initializeDatabase();
 
