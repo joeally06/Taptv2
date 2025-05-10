@@ -11,9 +11,14 @@
   },
   "dependencies": {
     "@astrojs/tailwind": "^5.1.0",
+<<<<<<< HEAD
     "@types/pg": "^8.15.1",
     "astro": "^5.2.5",
     "pg": "^8.15.6",
+=======
+    "@supabase/supabase-js": "^2.39.0",
+    "@libsql/client": "^0.5.6",
+>>>>>>> 93b2daee230eae2cbb928eae5f296b192380d689
     "tailwindcss": "^3.4.1"
   },
   "browserslist": [
