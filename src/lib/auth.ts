@@ -1,7 +1,9 @@
 import { createClient } from '@libsql/client';
+import { join } from 'path';
 
+const dataDir = join(process.cwd(), 'data');
 const db = createClient({
-  url: 'file:conference.db'
+  url: `file:${join(dataDir, 'conference.db')}`
 });
 
 export async function authenticateUser(email: string, password: string) {
