@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 
 export async function authenticateUser(email: string, password: string) {
   const result = await db.query(

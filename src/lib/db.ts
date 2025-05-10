@@ -1,6 +1,7 @@
-<<<<<<< HEAD
-import { Pool } from 'pg';
+import pg from 'pg';
 import { dbConfig } from './db-config.js';
+
+const { Pool } = pg;
 
 // Test database connection immediately
 async function testConnection() {
@@ -15,9 +16,6 @@ async function testConnection() {
     return false;
   }
 }
-
-// Test connection on startup
-testConnection();
 
 // First connect to default database
 const defaultPool = new Pool({
@@ -51,7 +49,7 @@ async function createDatabase() {
   }
 }
 
-// Create database then connect to it
+// Initialize the database
 await createDatabase();
 
 // Connect to tap_conference database
@@ -60,12 +58,12 @@ const pool = new Pool({
   database: 'tap_conference'
 });
 
-// Initialize database with required tables
-async function initializeDatabase() {
+export async function initializeDatabase() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-      // Create tables
+
+    // Create tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -92,7 +90,8 @@ async function initializeDatabase() {
         id TEXT PRIMARY KEY,
         organization TEXT NOT NULL,
         conference_id TEXT NOT NULL REFERENCES conferences(id),
-        total_amount NUMERIC NOT NULL
+        total_amount NUMERIC NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
 
@@ -111,7 +110,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Check if we need to insert sample conference
+    // Insert default conference if none exists
     const result = await client.query('SELECT COUNT(*) as count FROM conferences');
     if (parseInt(result.rows[0].count) === 0) {
       await client.query(`
@@ -126,8 +125,8 @@ async function initializeDatabase() {
         'Annual Tennessee Association for Pupil Transportation Conference',
         true
       ]);
-      console.log('Sample conference data inserted');
-    }    // Conference table is already created and sample data inserted above
+      console.log('Default conference created');
+    }
 
     await client.query('COMMIT');
     console.log('Database initialized successfully');
@@ -140,38 +139,6 @@ async function initializeDatabase() {
   }
 }
 
-// Initialize database schema
-await initializeDatabase();
-=======
-import { createClient } from '@supabase/supabase-js';
-
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables. Please connect to Supabase first.');
-}
-
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
-export const getLatestConference = async () => {
-  const { data, error } = await supabase
-    .from('conferences')
-    .select('*')
-    .order('start_date', { ascending: true })
-    .limit(1);
-
-  if (error) throw error;
-  
-  // Return null if no conference is found instead of throwing an error
-  if (!data || data.length === 0) {
-    return null;
-  }
-  
-  return data[0];
-};
->>>>>>> 93b2daee230eae2cbb928eae5f296b192380d689
-
 export async function getLatestConference() {
   try {
     const result = await pool.query(`
@@ -179,28 +146,7 @@ export async function getLatestConference() {
       ORDER BY start_date DESC 
       LIMIT 1
     `);
-    
-    if (!result.rows[0]) {
-      // Insert a default conference if none exists
-      const defaultConference = {
-        id: 'conf-2024',
-        name: 'TAPT Annual Conference 2024',
-        start_date: '2024-06-07',
-        end_date: '2024-06-09',
-        location: 'Franklin, TN',
-        description: 'Annual Tennessee Association for Pupil Transportation Conference',
-        registration_open: true
-      };
-      
-      await pool.query(`
-        INSERT INTO conferences (id, name, start_date, end_date, location, description, registration_open)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, Object.values(defaultConference));
-      
-      return defaultConference;
-    }
-    
-    return result.rows[0];
+    return result.rows[0] || null;
   } catch (error) {
     console.error('Error getting latest conference:', error);
     return null;
@@ -221,7 +167,6 @@ export async function createRegistration(data: {
   }>;
   totalAmount: number;
   conferenceId: string;
-<<<<<<< HEAD
 }) {
   const client = await pool.connect();
   try {
@@ -266,82 +211,7 @@ export async function createRegistration(data: {
   }
 }
 
-export const db = pool;
-=======
-}) => {
-  const { data: registration, error: regError } = await supabase
-    .from('registrations')
-    .insert({
-      organization: data.organization,
-      total_attendees: data.attendees.length,
-      total_amount: data.totalAmount,
-      conference_id: data.conferenceId
-    })
-    .select()
-    .single();
+// Initialize database on startup
+await initializeDatabase();
 
-  if (regError) throw regError;
-
-  for (const attendee of data.attendees) {
-    const { error: attError } = await supabase
-      .from('attendees')
-      .insert({
-        registration_id: registration.id,
-        first_name: attendee.firstName,
-        last_name: attendee.lastName,
-        address: attendee.address,
-        city: attendee.city,
-        state: attendee.state,
-        zip: attendee.zip,
-        email: attendee.email,
-        phone: attendee.phone
-      });
-
-    if (attError) throw attError;
-  }
-
-  return { id: registration.id };
-};
-
-export const createLuncheonRegistration = async (data: {
-  firstName: string;
-  lastName: string;
-  jobTitle: string;
-  district: string;
-  departmentLocation: string;
-  email: string;
-  phone: string;
-  groupSize: number;
-  location: string;
-}) => {
-  const [city, location] = data.location.split('-');
-  
-  const { data: event, error: eventError } = await supabase
-    .from('luncheon_events')
-    .select('id')
-    .eq('location', location)
-    .eq('city', city)
-    .single();
-
-  if (eventError) throw eventError;
-
-  const { data: registration, error: regError } = await supabase
-    .from('luncheon_registrations')
-    .insert({
-      first_name: data.firstName,
-      last_name: data.lastName,
-      job_title: data.jobTitle,
-      district: data.district,
-      department_location: data.departmentLocation,
-      email: data.email,
-      phone: data.phone,
-      group_size: data.groupSize,
-      event_id: event.id
-    })
-    .select()
-    .single();
-
-  if (regError) throw regError;
-  return { id: registration.id };
-};
->>>>>>> 93b2daee230eae2cbb928eae5f296b192380d689
+export { pool as db };
