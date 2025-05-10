@@ -2,11 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 import { getLatestConference } from '../lib/db';
 
-let conference;
-let error;
+let conference = null;
+let error = null;
 
 try {
   conference = await getLatestConference();
+  if (!conference) {
+    error = 'No upcoming conference is currently available';
+  }
 } catch (e) {
   error = e instanceof Error ? e.message : 'Failed to load conference data';
 }
@@ -76,7 +79,7 @@ const states = [
               <p class="text-gray-600">{error}</p>
               <p class="mt-4">Please check back later for upcoming conferences.</p>
             </div>
-          ) : (
+          ) : conference ? (
             <>
               <h1 class="text-3xl font-bold text-primary-800 mb-6 text-center">TAPT Conference Registration</h1>
               
@@ -324,6 +327,12 @@ const states = [
                 </div>
               </div>
             </>
+          ) : (
+            <div class="text-center py-8">
+              <h1 class="text-2xl font-bold text-gray-600 mb-4">No Conference Available</h1>
+              <p class="text-gray-600">There are no upcoming conferences at this time.</p>
+              <p class="mt-4">Please check back later for upcoming conferences.</p>
+            </div>
           )}
         </div>
       </div>
