@@ -33,13 +33,15 @@ export async function registerUser(email: string, password: string) {
         {
           id: authData.user.id,
           email: authData.user.email,
-          password: '', // Don't store the actual password
+          password: password, // Store the password since it's required by the schema
           role: 'user', // Default role
         }
       ]);
 
     if (userError) {
       console.error('Error creating user record:', userError);
+      // If user record creation fails, we should clean up the auth user
+      await supabase.auth.admin.deleteUser(authData.user.id);
       throw new Error('Failed to create user record');
     }
 
