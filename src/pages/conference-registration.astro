@@ -452,7 +452,7 @@ const states = [
     const data: Record<string, string> = {};
 
     for (const field of fields) {
-      const input = form?.querySelector(`[name="attendee${attendeeNum}${field}"]`) as HTMLInputElement | HTMLSelectElement;
+      const input = section.querySelector(`[name="attendee${attendeeNum}${field}"]`) as HTMLInputElement | HTMLSelectElement;
       if (!input || !input.value.trim()) {
         return null;
       }
@@ -618,6 +618,9 @@ const states = [
         totalAmount,
         conferenceId: conferenceData.id
       };
+
+      // Debug log to check request data
+      console.log('Request data:', requestData);
 
       const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       if (submitButton) {
