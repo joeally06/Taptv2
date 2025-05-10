@@ -18,9 +18,9 @@ export const getLatestConference = async () => {
 
   if (error) throw error;
   
-  // If no conference is found, throw a more descriptive error
+  // Return null if no conference is found instead of throwing an error
   if (!data || data.length === 0) {
-    throw new Error('No upcoming conferences found');
+    return null;
   }
   
   return data[0];
