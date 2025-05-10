@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'static',
+  output: 'server',
   integrations: [tailwind()],
   devToolbar: {
     enabled: false  // Temporarily disable dev toolbar to work around fetch error

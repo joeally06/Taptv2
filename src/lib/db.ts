@@ -1,7 +1,20 @@
 import { createClient } from '@libsql/client';
+import { mkdir } from 'fs/promises';
+import { join } from 'path';
+
+// Ensure data directory exists
+const dataDir = join(process.cwd(), 'data');
+try {
+  await mkdir(dataDir, { recursive: true });
+} catch (error) {
+  if ((error as any).code !== 'EEXIST') {
+    console.error('Failed to create data directory:', error);
+    throw error;
+  }
+}
 
 const db = createClient({
-  url: 'file:conference.db'
+  url: `file:${join(dataDir, 'conference.db')}`
 });
 
 // Initialize database with required tables
