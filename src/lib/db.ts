@@ -10,6 +10,7 @@ export async function createHallOfFameNomination(data: {
   nominator_name: string;
   nominator_email: string;
   nomination_reason: string;
+  district: string;
 }) {
   const { data: nomination, error } = await supabase
     .from('hall_of_fame_nominations')

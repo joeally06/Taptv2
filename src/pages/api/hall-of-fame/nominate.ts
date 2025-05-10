@@ -8,8 +8,18 @@ export const POST: APIRoute = async ({ request }) => {
   };
 
   try {
-    const data = await request.json();
-    const result = await createHallOfFameNomination(data);
+    const formData = await request.json();
+    
+    // Transform form data to match database schema
+    const nominationData = {
+      nominee_name: `${formData.nomineeFirstName} ${formData.nomineeLastName}`,
+      nominator_name: `${formData.supervisorFirstName} ${formData.supervisorLastName}`,
+      nominator_email: formData.supervisorEmail,
+      nomination_reason: '', // This field needs to be added to the form if required
+      district: formData.district
+    };
+
+    const result = await createHallOfFameNomination(nominationData);
 
     return new Response(
       JSON.stringify({ success: true, data: result }),
