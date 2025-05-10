@@ -15,7 +15,8 @@ async function initializeDatabase() {
     // Create data directory if it doesn't exist
     if (!existsSync(dataDir)) {
       console.log('Creating data directory...');
-      await mkdir(dataDir, { recursive: true, mode: 0o755 });
+      await mkdir(dataDir, { recursive: true });
+      console.log('Data directory created');
     }
     
     // Always ensure directory has correct permissions
@@ -26,6 +27,7 @@ async function initializeDatabase() {
     if (!existsSync(dbPath)) {
       console.log('Creating database file...');
       await writeFile(dbPath, '', { mode: 0o644 });
+      console.log('Database file created');
     }
     
     // Always ensure database file has correct permissions
@@ -46,6 +48,14 @@ async function initializeDatabase() {
       console.log('Correcting database file permissions...');
       await chmod(dbPath, 0o644);
     }
+
+    // Verify the file is readable and writable
+    try {
+      const testHandle = await writeFile(dbPath, '', { mode: 0o644, flag: 'a' });
+      console.log('Successfully verified database file is writable');
+    } catch (error) {
+      throw new Error(`Database file is not writable: ${error.message}`);
+    }
   } catch (error) {
     console.error('Failed to initialize database:', error);
     throw new Error(`Database initialization failed: ${error.message}`);
@@ -62,7 +72,7 @@ let db;
 try {
   console.log('Creating database client...');
   db = createClient({
-    url: `file:${dbPath}`
+    url: `file:${dbPath}?mode=rwc`
   });
   
   // Test the connection
