@@ -2,15 +2,14 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 
-// https://astro.build/config
 export default defineConfig({
-  output: 'server',
   integrations: [tailwind()],
   devToolbar: {
-    enabled: false  // Temporarily disable dev toolbar to work around fetch error
+    enabled: false
   },
   vite: {
     build: {
+      sourcemap: true,
       target: 'es2022'
     },
     server: {
