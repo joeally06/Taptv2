@@ -144,6 +144,19 @@ try {
     )
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS hall_of_fame_members (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      district TEXT NOT NULL,
+      induction_year INTEGER NOT NULL,
+      bio TEXT,
+      image_url TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   await db.execute('COMMIT');
   transactionStarted = false;
 
@@ -220,6 +233,45 @@ try {
           event.address,
           event.max_attendees,
           event.notes || null
+        ]
+      });
+    }
+  }
+
+  // Insert sample Hall of Fame members if none exist
+  const hofCount = await db.execute('SELECT COUNT(*) as count FROM hall_of_fame_members');
+  if (hofCount.rows[0].count === 0) {
+    const members = [
+      {
+        name: "Joe Baxter",
+        district: "Franklin County Schools",
+        induction_year: 2011,
+        bio: "Drove the same bus, number 40, for 56 years without an accident."
+      },
+      {
+        name: "Norman Dailey",
+        district: "Montgomery County Schools",
+        induction_year: 2012
+      },
+      {
+        name: "Aaron Smith",
+        district: "Obion County Schools",
+        induction_year: 2013
+      }
+    ];
+
+    for (const member of members) {
+      await db.execute({
+        sql: `
+          INSERT INTO hall_of_fame_members (id, name, district, induction_year, bio)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+        args: [
+          'hof-' + Math.random().toString(36).substr(2, 9),
+          member.name,
+          member.district,
+          member.induction_year,
+          member.bio || null
         ]
       });
     }
