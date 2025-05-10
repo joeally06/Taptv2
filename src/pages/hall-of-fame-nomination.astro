@@ -23,6 +23,8 @@ const regions = [
             <div class="w-20 h-1 bg-accent-500 mx-auto mb-6"></div>
           </div>
 
+          <div id="error-message" class="hidden mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded"></div>
+
           <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
             <p class="text-sm text-yellow-800">
               <strong>Important Notice:</strong> Only the School District Transportation Supervisor (listed with the TN Department of Education) and/or the School District Director of Schools may nominate a school bus driver for the TN Hall of Fame.
@@ -179,12 +181,31 @@ const regions = [
 
 <script>
   const form = document.getElementById('nomination-form') as HTMLFormElement;
+  const errorMessage = document.getElementById('error-message');
+
+  function showError(message: string) {
+    if (errorMessage) {
+      errorMessage.textContent = message;
+      errorMessage.classList.remove('hidden');
+      errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function hideError() {
+    if (errorMessage) {
+      errorMessage.classList.add('hidden');
+    }
+  }
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    hideError();
     
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
+
+    // Debug log
+    console.log('Form data being submitted:', data);
 
     try {
       const response = await fetch('/api/hall-of-fame/nominate', {
@@ -195,14 +216,19 @@ const regions = [
         body: JSON.stringify(data),
       });
 
+      // Debug log
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
       if (!response.ok) {
-        throw new Error('Nomination submission failed');
+        throw new Error(responseData.error || 'Nomination submission failed');
       }
 
       window.location.href = '/hall-of-fame-nomination/success';
     } catch (error) {
       console.error('Nomination error:', error);
-      alert('Failed to submit nomination. Please try again.');
+      showError(error instanceof Error ? error.message : 'Failed to submit nomination. Please try again.');
     }
   });
 </script>
