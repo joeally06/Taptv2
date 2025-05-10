@@ -15,38 +15,24 @@ export const GET: APIRoute = async ({ url }) => {
     'Cache-Control': 'no-store'
   };
 
-  const type = url.searchParams.get('type');
-
   try {
-    if (type === 'hof') {
-      const nominations = await db.execute(`SELECT * FROM hall_of_fame_nominations LIMIT 10`);
-      return new Response(JSON.stringify({ nominations: nominations.rows }), { status: 200, headers });
-    }
-    
-    if (type === 'scholarship') {
-      const applications = await db.execute(`SELECT * FROM scholarship_applications LIMIT 10`);
-      return new Response(JSON.stringify({ applications: applications.rows }), { status: 200, headers });
+    const type = url.searchParams.get('type');
+    if (!type) {
+      return new Response(JSON.stringify({ error: 'Type parameter is required' }), { status: 400, headers });
     }
 
-    const registrationId = url.searchParams.get('id');
-    
-    const registrations = await db.execute({
-      sql: `SELECT * FROM registrations WHERE id = ?`,
-      args: [registrationId]
-    });
-
-    const attendees = await db.execute({
-      sql: `SELECT * FROM attendees WHERE registration_id = ?`,
-      args: [registrationId]
-    });
-
-    return new Response(
-      JSON.stringify({ 
-        registration: registrations.rows[0],
-        attendees: attendees.rows
-      }), 
-      { status: 200, headers }
-    );
+    switch (type) {
+      case 'hof':
+        const nominations = await db.execute(`SELECT * FROM hall_of_fame_nominations ORDER BY created_at DESC LIMIT 10`);
+        return new Response(JSON.stringify({ nominations: nominations.rows }), { status: 200, headers });
+      
+      case 'scholarship':
+        const applications = await db.execute(`SELECT * FROM scholarship_applications ORDER BY created_at DESC LIMIT 10`);
+        return new Response(JSON.stringify({ applications: applications.rows }), { status: 200, headers });
+      
+      default:
+        return new Response(JSON.stringify({ error: 'Invalid type parameter' }), { status: 400, headers });
+    }    // Unreachable code after switch statement has been removed
   } catch (error) {
     console.error('Database query error:', error);
     return new Response(
