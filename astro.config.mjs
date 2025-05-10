@@ -11,11 +11,12 @@ export default defineConfig({
   }),
   integrations: [tailwind()],
   devToolbar: {
-    enabled: false  // Temporarily disable dev toolbar to work around fetch error
+    enabled: false  // Disable dev toolbar to prevent source map issues
   },
   vite: {
     build: {
-      target: 'es2022'
+      target: 'es2022',
+      sourcemap: false // Disable source maps to prevent line number issues
     },
     server: {
       hmr: {
