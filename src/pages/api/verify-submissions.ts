@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
 import { createClient } from '@libsql/client';
+import { join } from 'path';
 
+const dataDir = join(process.cwd(), 'data');
 const db = createClient({
-  url: 'file:conference.db'
+  url: `file:${join(dataDir, 'conference.db')}`
 });
 
 export const GET: APIRoute = async ({ url }) => {
