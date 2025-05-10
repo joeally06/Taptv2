@@ -43,7 +43,7 @@ await initializeDatabase();
 
 // Create client with explicit file URL protocol
 const db = createClient({
-  url: `file:${dbPath}?mode=rwc`
+  url: `file:${dbPath}`
 });
 
 // Initialize database with required tables
