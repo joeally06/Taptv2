@@ -4,7 +4,10 @@ import { getLatestConference } from '../../lib/db';
 export const GET: APIRoute = async () => {
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
   };
 
   try {
