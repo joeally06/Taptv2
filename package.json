@@ -1,5 +1,9 @@
 {
+  "scripts": {
+    "dev": "astro dev"
+  },
   "dependencies": {
-    "@astrojs/node": "^8.2.3"
+    "@astrojs/node": "^8.2.3",
+    "astro": "^4.3.5"
   }
 }
