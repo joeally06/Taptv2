@@ -227,13 +227,13 @@ import Layout from '../layouts/Layout.astro';
     }
 
     try {
-      const user = await registerUser(email, password);
+      await registerUser(email, password);
       showSuccess('Registration successful! You can now log in.');
       registerModal?.classList.add('hidden');
       registerForm.reset();
     } catch (error) {
       console.error('Registration error:', error);
-      showError('Failed to register. Please try again.');
+      showError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
     }
   });
 
@@ -256,7 +256,7 @@ import Layout from '../layouts/Layout.astro';
       forgotPasswordModal?.classList.add('hidden');
       resetForm.reset();
     } catch (error) {
-      showError('Failed to send reset link. Please try again.');
+      showError(error instanceof Error ? error.message : 'Failed to send reset link. Please try again.');
     }
   });
 
@@ -277,10 +277,6 @@ import Layout from '../layouts/Layout.astro';
     try {
       const user = await authenticateUser(email, password);
       
-      if (!user) {
-        throw new Error('Invalid credentials');
-      }
-
       // Store user session in cookies
       document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400`;
       
@@ -288,7 +284,7 @@ import Layout from '../layouts/Layout.astro';
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
-      showError('Invalid email or password');
+      showError(error instanceof Error ? error.message : 'Invalid email or password');
     }
   });
 </script>

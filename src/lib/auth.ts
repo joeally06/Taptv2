@@ -18,7 +18,7 @@ export async function registerUser(email: string, password: string) {
 
   if (authError) {
     console.error('Registration error:', authError);
-    throw authError;
+    throw new Error(authError.message);
   }
 
   if (!authData.user) {
@@ -38,7 +38,7 @@ export async function registerUser(email: string, password: string) {
 
   if (userError) {
     console.error('Error creating user record:', userError);
-    throw userError;
+    throw new Error('Failed to create user record');
   }
 
   return {
@@ -56,7 +56,11 @@ export async function authenticateUser(email: string, password: string) {
 
   if (error) {
     console.error('Authentication error:', error);
-    return null;
+    throw new Error('Invalid email or password');
+  }
+
+  if (!data.user) {
+    throw new Error('No user data returned');
   }
 
   // Get user role from the users table
@@ -68,7 +72,7 @@ export async function authenticateUser(email: string, password: string) {
 
   if (userError) {
     console.error('Error fetching user role:', userError);
-    return null;
+    throw new Error('Failed to fetch user data');
   }
 
   return {
@@ -100,7 +104,7 @@ export async function resetPassword(email: string) {
 
   if (error) {
     console.error('Reset password error:', error);
-    throw error;
+    throw new Error('Failed to send password reset email');
   }
 
   return true;
