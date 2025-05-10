@@ -1,5 +1,4 @@
 import { createClient } from '@libsql/client';
-import bcrypt from 'bcryptjs';
 
 const db = createClient({
   url: 'file:conference.db'
