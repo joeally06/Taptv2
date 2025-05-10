@@ -37,12 +37,13 @@ const navItems = [
 </nav>
 
 <script>
-  import { supabase } from '../lib/supabase';
-  
   const logoutButton = document.getElementById('logout-button');
   
-  logoutButton?.addEventListener('click', async () => {
-    await supabase.auth.signOut();
+  logoutButton?.addEventListener('click', () => {
+    // Clear any stored session data
+    sessionStorage.clear();
+    localStorage.clear();
+    // Redirect to login page
     window.location.href = '/login';
   });
 </script>
