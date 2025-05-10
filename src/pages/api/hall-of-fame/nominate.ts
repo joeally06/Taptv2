@@ -12,12 +12,25 @@ export const POST: APIRoute = async ({ request }) => {
     
     // Transform form data to match database schema
     const nominationData = {
-      nominee_name: `${formData.nomineeFirstName} ${formData.nomineeLastName}`,
-      nominator_name: `${formData.supervisorFirstName} ${formData.supervisorLastName}`,
-      nominator_email: formData.supervisorEmail,
-      nomination_reason: '', // This field needs to be added to the form if required
-      district: formData.district
+      nominee_name: `${formData.nomineeFirstName} ${formData.nomineeLastName}`.trim(),
+      nominator_name: `${formData.supervisorFirstName} ${formData.supervisorLastName}`.trim(),
+      nominator_email: formData.supervisorEmail.trim(),
+      nomination_reason: formData.nominationReason || '', // Make sure this field exists in your form
+      district: formData.district.trim()
     };
+
+    // Validate required fields
+    const requiredFields = ['nominee_name', 'nominator_name', 'nominator_email', 'nomination_reason', 'district'];
+    const missingFields = requiredFields.filter(field => !nominationData[field]);
+    
+    if (missingFields.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Missing required fields: ${missingFields.join(', ')}` 
+        }),
+        { status: 400, headers }
+      );
+    }
 
     const result = await createHallOfFameNomination(nominationData);
 
@@ -26,9 +39,11 @@ export const POST: APIRoute = async ({ request }) => {
       { status: 200, headers }
     );
   } catch (error) {
-    console.error('Nomination error:', error);
+    console.error('Nomination error:', error, error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'An error occurred while processing the nomination' 
+      }),
       { status: 500, headers }
     );
   }
