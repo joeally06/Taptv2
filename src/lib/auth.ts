@@ -1,37 +1,41 @@
-import { createClient } from '@libsql/client';
-import { join } from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const dataDir = join(process.cwd(), 'data');
-const dbPath = join(dataDir, 'conference.db');
-const db = createClient({
-  url: `file:${dbPath}`
-});
-
-export async function authenticateUser(email: string, password: string) {
-  const result = await db.execute({
-    sql: 'SELECT * FROM users WHERE email = ? AND password = ?',
-    args: [email, password]
-  });
-  
-  return result.rows[0] || null;
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-export async function createUser(email: string, password: string, role: string = 'user') {
-  const id = 'user-' + Math.random().toString(36).substr(2, 9);
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
-  await db.execute({
-    sql: `INSERT INTO users (id, email, password, role) VALUES (?, ?, ?, ?)`,
-    args: [id, email, password, role]
-  });
+export async function authenticateUser(email: string, password: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, role')
+    .eq('email', email)
+    .eq('password', password)
+    .single();
 
-  return { id, email, role };
+  if (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+
+  return data;
 }
 
 export async function isAdmin(userId: string) {
-  const result = await db.execute({
-    sql: 'SELECT role FROM users WHERE id = ?',
-    args: [userId]
-  });
-  
-  return result.rows[0]?.role === 'admin';
+  const { data, error } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+
+  return data?.role === 'admin';
 }

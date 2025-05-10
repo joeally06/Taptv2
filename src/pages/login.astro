@@ -1,11 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 ---
 
 <Layout title="Login">
@@ -59,6 +53,8 @@ const supabase = createClient(
 </Layout>
 
 <script>
+  import { authenticateUser } from '../lib/auth';
+
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
 
@@ -82,16 +78,17 @@ const supabase = createClient(
     }
 
     try {
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
-      if (user) {
-        window.location.href = '/admin';
+      const user = await authenticateUser(email, password);
+      
+      if (!user) {
+        throw new Error('Invalid credentials');
       }
+
+      // Store user session in cookies
+      document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400`;
+      
+      // Redirect to admin dashboard
+      window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
       if (errorMessage) {
