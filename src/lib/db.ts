@@ -14,11 +14,16 @@ export const getLatestConference = async () => {
     .from('conferences')
     .select('*')
     .order('start_date', { ascending: true })
-    .limit(1)
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  
+  // If no conference is found, throw a more descriptive error
+  if (!data || data.length === 0) {
+    throw new Error('No upcoming conferences found');
+  }
+  
+  return data[0];
 };
 
 export const createRegistration = async (data: {
@@ -111,5 +116,3 @@ export const createLuncheonRegistration = async (data: {
   if (regError) throw regError;
   return { id: registration.id };
 };
-
-// Add other database functions similarly...

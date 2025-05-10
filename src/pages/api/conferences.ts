@@ -18,9 +18,10 @@ export const GET: APIRoute = async () => {
     );
   } catch (error) {
     console.error('Error fetching conference:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch conference data';
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch conference data' }),
-      { status: 500, headers }
+      JSON.stringify({ error: message }),
+      { status: 404, headers }
     );
   }
 };
