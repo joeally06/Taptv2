@@ -1,18 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@libsql/client';
 
-const supabase = createClient(
-  import.meta.env.SUPABASE_URL,
-  import.meta.env.SUPABASE_ANON_KEY
-);
+const db = createClient({
+  url: 'file:conference.db'
+});
 
 // Fetch hall of fame members from database
-const { data: members } = await supabase
-  .from('hall_of_fame_members')
-  .select('*')
-  .order('induction_year.desc, name.asc');
+const result = await db.execute(`
+  SELECT * FROM hall_of_fame_members 
+  ORDER BY induction_year DESC, name ASC
+`);
 
+const members = result.rows;
 ---
 
 <Layout title="Hall of Fame">
