@@ -1,22 +1,37 @@
 import { createClient } from '@libsql/client';
-import { mkdir, chmod } from 'fs/promises';
+import { mkdir, chmod, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
 // Ensure data directory exists with correct permissions
 const dataDir = join(process.cwd(), 'data');
-try {
-  if (!existsSync(dataDir)) {
-    await mkdir(dataDir, { recursive: true, mode: 0o755 });
-  } else {
+const dbPath = join(dataDir, 'conference.db');
+
+// Initialize database and directory
+async function initializeDatabase() {
+  try {
+    // Create data directory if it doesn't exist
+    if (!existsSync(dataDir)) {
+      await mkdir(dataDir, { recursive: true });
+    }
+    
+    // Set directory permissions to 755
     await chmod(dataDir, 0o755);
+    
+    // Create empty database file if it doesn't exist
+    if (!existsSync(dbPath)) {
+      await writeFile(dbPath, '');
+      await chmod(dbPath, 0o644);
+    }
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw error;
   }
-} catch (error) {
-  console.error('Failed to create or set permissions on data directory:', error);
-  throw error;
 }
 
-const dbPath = join(dataDir, 'conference.db');
+// Initialize database before creating client
+await initializeDatabase();
+
 const db = createClient({
   url: `file:${dbPath}`
 });
