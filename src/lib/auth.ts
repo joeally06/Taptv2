@@ -53,3 +53,16 @@ export async function isAdmin(userId: string) {
 
   return data?.role === 'admin';
 }
+
+export async function resetPassword(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`
+  });
+
+  if (error) {
+    console.error('Reset password error:', error);
+    throw error;
+  }
+
+  return true;
+}
