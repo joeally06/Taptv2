@@ -1,18 +1,120 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { createClient } from '@libsql/client';
 
-const db = createClient({
-  url: 'file:conference.db'
-});
-
-// Fetch hall of fame members from database
-const result = await db.execute(`
-  SELECT * FROM hall_of_fame_members 
-  ORDER BY induction_year DESC, name ASC
-`);
-
-const members = result.rows;
+const hallOfFameMembers = [
+  {
+    name: "Joe Baxter",
+    district: "Franklin County Schools",
+    link: "/joe-baxter-hof"  // Updated link
+  },
+  {
+    name: "Norman Dailey",
+    district: "Montgomery County Schools",
+    link: "https://www.tapt.org/norman-dailey-hof"
+  },
+  {
+    name: "Aaron Smith",
+    district: "Obion County Schools",
+    link: "https://www.tapt.org/hof-aaron-smith"
+  },
+  {
+    name: "James Wallace Jr",
+    district: "Stewart County Schools",
+    link: "https://www.tapt.org/mr-junior-wallace-hof"
+  },
+  {
+    name: "David Wright",
+    district: "Wilson County Schools",
+    link: "https://www.tapt.org/david-wright-hof"
+  },
+  {
+    name: "Bobby Charles Martin",
+    district: "Dekalb County Schools",
+    link: "https://www.tapt.org/hof"
+  },
+  {
+    name: "Robert Bailey",
+    district: "Montgomery County Schools",
+    link: "https://www.tapt.org/hof-bio-3"
+  },
+  {
+    name: "Lawanna Bowers",
+    district: "Montgomery County Schools",
+    link: "https://www.tapt.org/hof-bio-1"
+  },
+  {
+    name: "Kenneth Smith",
+    district: "Loudon/Blount Counties Schools",
+    link: "https://www.tapt.org/hof-bio-2"
+  },
+  {
+    name: "Thomas Curtis",
+    district: "Monroe County Schools",
+    link: "https://www.tapt.org/thomas-curtis-hof"
+  },
+  {
+    name: "Brenda Corder",
+    district: "Bristol City Schools"
+  },
+  {
+    name: "Joseph \"Joby\" Givens",
+    district: "Rutherford County Schools"
+  },
+  {
+    name: "Robert Brooks",
+    district: "Hawkins County Schools",
+    link: "https://www.tapt.org/robert-brooks-hof"
+  },
+  {
+    name: "Alvin Lee",
+    district: "Hamilton County Schools",
+    link: "https://www.tapt.org/alvin-lee-hof"
+  },
+  {
+    name: "Jimmie Lee Robertson",
+    district: "Hardeman County Schools",
+    link: "https://www.tapt.org/hof-jimmie-lee-robertson"
+  },
+  {
+    name: "Joyce Stacey",
+    district: "Dickson County Schools",
+    link: "https://www.tapt.org/joyce-stacey-hof"
+  },
+  {
+    name: "Rosie Holder",
+    district: "Sumner County Schools",
+    link: "https://www.tapt.org/rosie-holder-hof"
+  },
+  {
+    name: "Fred Hilton",
+    district: "Hancock County Schools",
+    link: "https://www.tapt.org"
+  },
+  {
+    name: "Bobbie Jean Dennis",
+    district: "Jackson County Schools",
+    link: "https://www.tapt.org/bobbie-jean-dennis"
+  },
+  {
+    name: "Doyle Bartley",
+    district: "Macon County Schools",
+    link: "https://www.tapt.org/doyle-bartley-hof"
+  },
+  {
+    name: "Roy Dye Senior",
+    district: "Rutherford County",
+    link: "https://www.tapt.org/mr-roy-w-dye-hof"
+  },
+  {
+    name: "Sherrill Reams",
+    district: "Obion County Schools",
+    link: "https://www.tapt.org/sherill-reams-hof"
+  },
+  {
+    name: "Bobbie Pruett",
+    district: "Humphreys County"
+  }
+];
 ---
 
 <Layout title="Hall of Fame">
@@ -48,18 +150,24 @@ const members = result.rows;
         <div class="bg-white rounded-lg shadow-md p-8">
           <h2 class="text-2xl font-bold text-primary-700 mb-6">Hall of Fame Members</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {members?.map(member => (
+            {hallOfFameMembers.map(member => (
               <div class="border-b border-gray-200 last:border-b-0 py-4">
-                <div class="p-2 -m-2">
-                  <h3 class="text-lg font-semibold text-gray-800">{member.name}</h3>
-                  <p class="text-gray-600">{member.district}</p>
-                  {member.induction_year && (
-                    <p class="text-sm text-gray-500">Inducted: {member.induction_year}</p>
-                  )}
-                  {member.bio && (
-                    <p class="text-sm text-gray-600 mt-2">{member.bio}</p>
-                  )}
-                </div>
+                {member.link ? (
+                  <a 
+                    href={member.link}
+                    class="block hover:bg-gray-50 p-2 -m-2 rounded transition-colors"
+                  >
+                    <h3 class="text-lg font-semibold text-primary-600 hover:text-primary-800">
+                      {member.name}
+                    </h3>
+                    <p class="text-gray-600">{member.district}</p>
+                  </a>
+                ) : (
+                  <div class="p-2 -m-2">
+                    <h3 class="text-lg font-semibold text-gray-800">{member.name}</h3>
+                    <p class="text-gray-600">{member.district}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
