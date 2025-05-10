@@ -1,13 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
-import { createClient } from '@libsql/client';
-import { join } from 'path';
-
-const dataDir = join(process.cwd(), 'data');
-const db = createClient({
-  url: `file:${join(dataDir, 'conference.db')}`
-});
+// Database implementation will be added later
+const db = null;
 
 // Check if user is authenticated and is admin
 const user = Astro.cookies.get('user')?.json();
