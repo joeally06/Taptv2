@@ -51,7 +51,7 @@ async function initializeDatabase() {
 
     // Verify the file is readable and writable
     try {
-      const testHandle = await writeFile(dbPath, '', { mode: 0o644, flag: 'a' });
+      await writeFile(dbPath, '', { mode: 0o644, flag: 'a' });
       console.log('Successfully verified database file is writable');
     } catch (error) {
       throw new Error(`Database file is not writable: ${error.message}`);
