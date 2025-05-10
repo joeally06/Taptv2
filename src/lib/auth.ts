@@ -9,6 +9,45 @@ const supabase = createClient(
   import.meta.env.PUBLIC_SUPABASE_ANON_KEY
 );
 
+export async function registerUser(email: string, password: string) {
+  // First create the auth user
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (authError) {
+    console.error('Registration error:', authError);
+    throw authError;
+  }
+
+  if (!authData.user) {
+    throw new Error('Failed to create user');
+  }
+
+  // Then create the user record in our users table
+  const { error: userError } = await supabase
+    .from('users')
+    .insert([
+      {
+        id: authData.user.id,
+        email: authData.user.email,
+        role: 'user', // Default role
+      }
+    ]);
+
+  if (userError) {
+    console.error('Error creating user record:', userError);
+    throw userError;
+  }
+
+  return {
+    id: authData.user.id,
+    email: authData.user.email,
+    role: 'user'
+  };
+}
+
 export async function authenticateUser(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,

@@ -37,14 +37,25 @@ import Layout from '../layouts/Layout.astro';
           </div>
         </div>
 
-        <div class="flex items-center justify-end">
-          <button
-            type="button"
-            id="forgot-password"
-            class="text-sm font-medium text-primary-600 hover:text-primary-500"
-          >
-            Forgot your password?
-          </button>
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <button
+              type="button"
+              id="show-register"
+              class="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Need an account? Register
+            </button>
+          </div>
+          <div class="text-sm">
+            <button
+              type="button"
+              id="forgot-password"
+              class="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Forgot your password?
+            </button>
+          </div>
         </div>
 
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
@@ -59,6 +70,50 @@ import Layout from '../layouts/Layout.astro';
           </button>
         </div>
       </form>
+
+      <!-- Registration Modal -->
+      <div id="register-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Create an Account</h3>
+          <form id="register-form" class="space-y-4">
+            <div>
+              <label for="register-email" class="block text-sm font-medium text-gray-700">Email address</label>
+              <input
+                type="email"
+                id="register-email"
+                name="email"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div>
+              <label for="register-password" class="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                id="register-password"
+                name="password"
+                required
+                minlength="6"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div class="flex justify-end space-x-3">
+              <button
+                type="button"
+                class="close-modal px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
+              >
+                Register
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       <!-- Forgot Password Modal -->
       <div id="forgot-password-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
@@ -78,8 +133,7 @@ import Layout from '../layouts/Layout.astro';
             <div class="flex justify-end space-x-3">
               <button
                 type="button"
-                id="close-modal"
-                class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
+                class="close-modal px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
               >
                 Cancel
               </button>
@@ -98,13 +152,15 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { authenticateUser, resetPassword } from '../lib/auth';
+  import { authenticateUser, resetPassword, registerUser } from '../lib/auth';
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
   const successMessage = document.getElementById('success-message');
   const forgotPasswordModal = document.getElementById('forgot-password-modal');
+  const registerModal = document.getElementById('register-modal');
   const resetForm = document.getElementById('reset-password-form') as HTMLFormElement;
+  const registerForm = document.getElementById('register-form') as HTMLFormElement;
 
   function showError(message: string) {
     if (errorMessage) {
@@ -128,20 +184,56 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // Modal controls
+  document.getElementById('show-register')?.addEventListener('click', () => {
+    registerModal?.classList.remove('hidden');
+  });
+
   document.getElementById('forgot-password')?.addEventListener('click', () => {
     forgotPasswordModal?.classList.remove('hidden');
   });
 
-  document.getElementById('close-modal')?.addEventListener('click', () => {
-    forgotPasswordModal?.classList.add('hidden');
-    resetForm?.reset();
+  document.querySelectorAll('.close-modal').forEach(button => {
+    button.addEventListener('click', () => {
+      forgotPasswordModal?.classList.add('hidden');
+      registerModal?.classList.add('hidden');
+      resetForm?.reset();
+      registerForm?.reset();
+    });
   });
 
-  // Close modal when clicking outside
-  forgotPasswordModal?.addEventListener('click', (e) => {
-    if (e.target === forgotPasswordModal) {
-      forgotPasswordModal.classList.add('hidden');
-      resetForm?.reset();
+  // Close modals when clicking outside
+  [forgotPasswordModal, registerModal].forEach(modal => {
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+        resetForm?.reset();
+        registerForm?.reset();
+      }
+    });
+  });
+
+  // Handle registration
+  registerForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideMessages();
+
+    const formData = new FormData(registerForm);
+    const email = formData.get('email')?.toString();
+    const password = formData.get('password')?.toString();
+
+    if (!email || !password) {
+      showError('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const user = await registerUser(email, password);
+      showSuccess('Registration successful! You can now log in.');
+      registerModal?.classList.add('hidden');
+      registerForm.reset();
+    } catch (error) {
+      console.error('Registration error:', error);
+      showError('Failed to register. Please try again.');
     }
   });
 
