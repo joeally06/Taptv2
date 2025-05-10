@@ -1,6 +1,7 @@
 import { createClient } from '@libsql/client';
 import bcrypt from 'bcryptjs';
 
+// Create the database client
 const db = createClient({
   url: 'file:conference.db'
 });
@@ -9,156 +10,168 @@ const db = createClient({
 let transactionStarted = false;
 try {
   console.log('Initializing database...');
-  // Start transaction
-  await db.execute('BEGIN');
-  transactionStarted = true;
   
-  // Create tables one at a time to better handle errors
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS conferences (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      start_date TEXT NOT NULL,
-      end_date TEXT NOT NULL,
-      location TEXT NOT NULL,
-      description TEXT,
-      price NUMERIC NOT NULL DEFAULT 0,
-      max_attendees INTEGER
-    )
+  // First check if tables exist
+  const tablesExist = await db.execute(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name='hall_of_fame_members'
   `);
+  
+  if (tablesExist.rows.length === 0) {
+    console.log('Tables do not exist, creating schema...');
+    
+    // Start transaction
+    await db.execute('BEGIN');
+    transactionStarted = true;
+    
+    // Create tables one at a time to better handle errors
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS conferences (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        location TEXT NOT NULL,
+        description TEXT,
+        price NUMERIC NOT NULL DEFAULT 0,
+        max_attendees INTEGER
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS registrations (
-      id TEXT PRIMARY KEY,
-      organization TEXT NOT NULL,
-      total_attendees INTEGER NOT NULL,
-      total_amount NUMERIC NOT NULL,
-      conference_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (conference_id) REFERENCES conferences (id)
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS registrations (
+        id TEXT PRIMARY KEY,
+        organization TEXT NOT NULL,
+        total_attendees INTEGER NOT NULL,
+        total_amount NUMERIC NOT NULL,
+        conference_id TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (conference_id) REFERENCES conferences (id)
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS attendees (
-      id TEXT PRIMARY KEY,
-      registration_id TEXT NOT NULL,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      address TEXT NOT NULL,
-      city TEXT NOT NULL,
-      state TEXT NOT NULL,
-      zip TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      FOREIGN KEY (registration_id) REFERENCES registrations (id)
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS attendees (
+        id TEXT PRIMARY KEY,
+        registration_id TEXT NOT NULL,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL,
+        zip TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        FOREIGN KEY (registration_id) REFERENCES registrations (id)
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'user',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'user',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS luncheon_events (
-      id TEXT PRIMARY KEY,
-      date TEXT NOT NULL,
-      time TEXT NOT NULL,
-      location TEXT NOT NULL,
-      city TEXT NOT NULL,
-      address TEXT NOT NULL,
-      max_attendees INTEGER,
-      notes TEXT
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS luncheon_events (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        location TEXT NOT NULL,
+        city TEXT NOT NULL,
+        address TEXT NOT NULL,
+        max_attendees INTEGER,
+        notes TEXT
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS luncheon_registrations (
-      id TEXT PRIMARY KEY,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      job_title TEXT NOT NULL,
-      district TEXT NOT NULL,
-      department_location TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      group_size INTEGER NOT NULL,
-      event_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (event_id) REFERENCES luncheon_events (id)
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS luncheon_registrations (
+        id TEXT PRIMARY KEY,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        job_title TEXT NOT NULL,
+        district TEXT NOT NULL,
+        department_location TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        group_size INTEGER NOT NULL,
+        event_id TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (event_id) REFERENCES luncheon_events (id)
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS hall_of_fame_nominations (
-      id TEXT PRIMARY KEY,
-      supervisor_first_name TEXT NOT NULL,
-      supervisor_last_name TEXT NOT NULL,
-      supervisor_email TEXT NOT NULL,
-      district TEXT NOT NULL,
-      nominee_first_name TEXT NOT NULL,
-      nominee_last_name TEXT NOT NULL,
-      nominee_city TEXT NOT NULL,
-      years_of_service INTEGER,
-      region TEXT NOT NULL,
-      is_tapt_member BOOLEAN NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      status TEXT DEFAULT 'pending'
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS hall_of_fame_nominations (
+        id TEXT PRIMARY KEY,
+        supervisor_first_name TEXT NOT NULL,
+        supervisor_last_name TEXT NOT NULL,
+        supervisor_email TEXT NOT NULL,
+        district TEXT NOT NULL,
+        nominee_first_name TEXT NOT NULL,
+        nominee_last_name TEXT NOT NULL,
+        nominee_city TEXT NOT NULL,
+        years_of_service INTEGER,
+        region TEXT NOT NULL,
+        is_tapt_member BOOLEAN NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'pending'
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS scholarship_applications (
-      id TEXT PRIMARY KEY,
-      first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL,
-      birth_date TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      address TEXT NOT NULL,
-      city TEXT NOT NULL,
-      state TEXT NOT NULL,
-      zip TEXT NOT NULL,
-      gender TEXT,
-      is_us_citizen BOOLEAN,
-      current_status TEXT,
-      is_first_gen BOOLEAN,
-      major TEXT,
-      career_objective TEXT,
-      high_school TEXT NOT NULL,
-      school_district TEXT NOT NULL,
-      graduation_year INTEGER NOT NULL,
-      gpa NUMERIC,
-      activities TEXT,
-      act_year INTEGER,
-      act_score INTEGER,
-      essay TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      status TEXT DEFAULT 'pending'
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS scholarship_applications (
+        id TEXT PRIMARY KEY,
+        first_name TEXT NOT NULL,
+        last_name TEXT NOT NULL,
+        birth_date TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL,
+        zip TEXT NOT NULL,
+        gender TEXT,
+        is_us_citizen BOOLEAN,
+        current_status TEXT,
+        is_first_gen BOOLEAN,
+        major TEXT,
+        career_objective TEXT,
+        high_school TEXT NOT NULL,
+        school_district TEXT NOT NULL,
+        graduation_year INTEGER NOT NULL,
+        gpa NUMERIC,
+        activities TEXT,
+        act_year INTEGER,
+        act_score INTEGER,
+        essay TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'pending'
+      )
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS hall_of_fame_members (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      district TEXT NOT NULL,
-      induction_year INTEGER NOT NULL,
-      bio TEXT,
-      image_url TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS hall_of_fame_members (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        district TEXT NOT NULL,
+        induction_year INTEGER NOT NULL,
+        bio TEXT,
+        image_url TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-  await db.execute('COMMIT');
-  transactionStarted = false;
+    await db.execute('COMMIT');
+    transactionStarted = false;
+    console.log('Schema created successfully');
+  }
 
   // Insert sample conference if none exists
   console.log('Checking for existing conferences...');
