@@ -55,3 +55,34 @@ export const GET: APIRoute = async ({ url }) => {
     );
   }
 };
+
+export const POST: APIRoute = async ({ request }) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store'
+  };
+
+  try {
+    const body = await request.text();
+    console.log('Received body:', body);
+
+    if (!body) {
+      return new Response(
+        JSON.stringify({ error: 'Empty request body' }), 
+        { status: 400, headers }
+      );
+    }
+
+    const data = JSON.parse(body);
+    return new Response(
+      JSON.stringify({ success: true, data }), 
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error('Error processing request:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to process request' }), 
+      { status: 500, headers }
+    );
+  }
+};
