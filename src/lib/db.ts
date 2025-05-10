@@ -72,7 +72,7 @@ let db;
 try {
   console.log('Creating database client...');
   db = createClient({
-    url: `file:${dbPath}?mode=rwc`
+    url: `file:${dbPath}`
   });
   
   // Test the connection
