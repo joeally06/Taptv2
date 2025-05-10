@@ -16,7 +16,7 @@ export default defineConfig({
   vite: {
     build: {
       target: 'es2022',
-      sourcemap: false
+      sourcemap: true
     },
     server: {
       hmr: {
