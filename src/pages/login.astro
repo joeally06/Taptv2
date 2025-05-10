@@ -9,6 +9,16 @@ import Layout from '../layouts/Layout.astro';
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+          Or
+          <button
+            type="button"
+            id="show-register"
+            class="font-medium text-primary-600 hover:text-primary-500"
+          >
+            create a new account
+          </button>
+        </p>
       </div>
       
       <form id="login-form" class="mt-8 space-y-6">
@@ -38,15 +48,6 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <div class="flex items-center justify-between">
-          <div class="text-sm">
-            <button
-              type="button"
-              id="show-register"
-              class="font-medium text-primary-600 hover:text-primary-500"
-            >
-              Need an account? Register
-            </button>
-          </div>
           <div class="text-sm">
             <button
               type="button"
@@ -96,6 +97,18 @@ import Layout from '../layouts/Layout.astro';
                 minlength="6"
                 class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               />
+              <p class="mt-1 text-sm text-gray-500">Password must be at least 6 characters long</p>
+            </div>
+            <div>
+              <label for="register-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+              <input
+                type="password"
+                id="register-confirm-password"
+                name="confirm-password"
+                required
+                minlength="6"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
             </div>
             <div class="flex justify-end space-x-3">
               <button
@@ -119,6 +132,7 @@ import Layout from '../layouts/Layout.astro';
       <div id="forgot-password-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
         <div class="bg-white rounded-lg p-8 max-w-md w-full">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password</h3>
+          <p class="text-sm text-gray-500 mb-4">Enter your email address and we'll send you a link to reset your password.</p>
           <form id="reset-password-form" class="space-y-4">
             <div>
               <label for="reset-email" class="block text-sm font-medium text-gray-700">Email address</label>
@@ -198,6 +212,7 @@ import Layout from '../layouts/Layout.astro';
       registerModal?.classList.add('hidden');
       resetForm?.reset();
       registerForm?.reset();
+      hideMessages();
     });
   });
 
@@ -208,6 +223,7 @@ import Layout from '../layouts/Layout.astro';
         modal.classList.add('hidden');
         resetForm?.reset();
         registerForm?.reset();
+        hideMessages();
       }
     });
   });
@@ -220,20 +236,35 @@ import Layout from '../layouts/Layout.astro';
     const formData = new FormData(registerForm);
     const email = formData.get('email')?.toString();
     const password = formData.get('password')?.toString();
+    const confirmPassword = formData.get('confirm-password')?.toString();
 
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       showError('Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showError('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      showError('Password must be at least 6 characters long');
       return;
     }
 
     try {
       await registerUser(email, password);
-      showSuccess('Registration successful! You can now log in.');
+      showSuccess('Registration successful! You can now log in with your new account.');
       registerModal?.classList.add('hidden');
       registerForm.reset();
     } catch (error) {
       console.error('Registration error:', error);
-      showError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
+      if (error instanceof Error && error.message.includes('already registered')) {
+        showError('This email is already registered. Please try logging in instead.');
+      } else {
+        showError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
+      }
     }
   });
 
@@ -252,11 +283,14 @@ import Layout from '../layouts/Layout.astro';
 
     try {
       await resetPassword(email);
-      showSuccess('Password reset link sent to your email');
+      showSuccess('If an account exists with this email, you will receive a password reset link shortly.');
       forgotPasswordModal?.classList.add('hidden');
       resetForm.reset();
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Failed to send reset link. Please try again.');
+      // Don't show specific errors for password reset to prevent email enumeration
+      showSuccess('If an account exists with this email, you will receive a password reset link shortly.');
+      forgotPasswordModal?.classList.add('hidden');
+      resetForm.reset();
     }
   });
 
@@ -278,13 +312,13 @@ import Layout from '../layouts/Layout.astro';
       const user = await authenticateUser(email, password);
       
       // Store user session in cookies
-      document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400`;
+      document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400; secure; samesite=strict`;
       
       // Redirect to admin dashboard
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
-      showError(error instanceof Error ? error.message : 'Invalid email or password');
+      showError('Invalid email or password. Please check your credentials and try again.');
     }
   });
 </script>
