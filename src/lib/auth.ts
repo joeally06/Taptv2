@@ -10,19 +10,33 @@ const supabase = createClient(
 );
 
 export async function authenticateUser(email: string, password: string) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, email, role')
-    .eq('email', email)
-    .eq('password', password)
-    .single();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
   if (error) {
     console.error('Authentication error:', error);
     return null;
   }
 
-  return data;
+  // Get user role from the users table
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', data.user.id)
+    .single();
+
+  if (userError) {
+    console.error('Error fetching user role:', userError);
+    return null;
+  }
+
+  return {
+    id: data.user.id,
+    email: data.user.email,
+    role: userData.role
+  };
 }
 
 export async function isAdmin(userId: string) {
