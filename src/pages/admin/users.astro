@@ -2,9 +2,11 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
 import { createClient } from '@libsql/client';
+import { join } from 'path';
 
+const dataDir = join(process.cwd(), 'data');
 const db = createClient({
-  url: 'file:conference.db'
+  url: `file:${join(dataDir, 'conference.db')}`
 });
 
 // Check if user is authenticated and is admin
