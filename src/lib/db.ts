@@ -1,5 +1,5 @@
 import { createClient } from '@libsql/client';
-import { mkdir, chmod, writeFile } from 'fs/promises';
+import { mkdir, chmod, writeFile, stat } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
@@ -10,46 +10,73 @@ const dbPath = join(dataDir, 'conference.db');
 // Initialize database and directory
 async function initializeDatabase() {
   try {
+    console.log('Initializing database directory and file...');
+    
     // Create data directory if it doesn't exist
     if (!existsSync(dataDir)) {
-      await mkdir(dataDir, { recursive: true });
-      // Set directory permissions to 755 immediately after creation
-      await chmod(dataDir, 0o755);
-    } else {
-      // Ensure correct permissions even if directory exists
-      await chmod(dataDir, 0o755);
+      console.log('Creating data directory...');
+      await mkdir(dataDir, { recursive: true, mode: 0o755 });
     }
     
+    // Always ensure directory has correct permissions
+    await chmod(dataDir, 0o755);
+    console.log('Data directory permissions set to 755');
+
     // Create empty database file if it doesn't exist
     if (!existsSync(dbPath)) {
+      console.log('Creating database file...');
       await writeFile(dbPath, '', { mode: 0o644 });
-    } else {
-      // Ensure correct permissions even if file exists
-      await chmod(dbPath, 0o644);
     }
+    
+    // Always ensure database file has correct permissions
+    await chmod(dbPath, 0o644);
+    console.log('Database file permissions set to 644');
 
-    // Verify file exists and has correct permissions
-    if (!existsSync(dbPath)) {
-      throw new Error('Failed to create database file');
+    // Verify file exists and permissions are correct
+    const stats = await stat(dbPath);
+    if (!stats.isFile()) {
+      throw new Error('Database path exists but is not a file');
+    }
+    
+    // Convert mode to octal string and check permissions
+    const mode = (stats.mode & 0o777).toString(8);
+    console.log(`Database file exists with permissions: ${mode}`);
+    
+    if ((stats.mode & 0o644) !== 0o644) {
+      console.log('Correcting database file permissions...');
+      await chmod(dbPath, 0o644);
     }
   } catch (error) {
     console.error('Failed to initialize database:', error);
-    throw error;
+    throw new Error(`Database initialization failed: ${error.message}`);
   }
 }
 
 // Initialize database before creating client
+console.log('Starting database initialization...');
 await initializeDatabase();
+console.log('Database initialization completed');
 
-// Create client with explicit file URL protocol
-const db = createClient({
-  url: `file:${dbPath}`
-});
+// Create client with explicit file URL protocol and verify connection
+let db;
+try {
+  console.log('Creating database client...');
+  db = createClient({
+    url: `file:${dbPath}`
+  });
+  
+  // Test the connection
+  await db.execute('SELECT 1');
+  console.log('Database connection successful');
+} catch (error) {
+  console.error('Failed to create database client:', error);
+  throw new Error(`Database connection failed: ${error.message}`);
+}
 
 // Initialize database with required tables
 let transactionStarted = false;
 try {
-  console.log('Initializing database...');
+  console.log('Initializing database schema...');
   // Start transaction
   await db.execute('BEGIN');
   transactionStarted = true;
