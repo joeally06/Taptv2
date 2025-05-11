@@ -34,7 +34,11 @@ export default defineConfig({
       esbuildOptions: {
         target: 'es2022'
       },
-      force: true
-    }
+      force: true,
+      exclude: [],
+      include: []
+    },
+    clearScreen: false,
+    cacheDir: '.vite'
   }
 });
