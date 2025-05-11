@@ -15,24 +15,31 @@ export default defineConfig({
     },
     server: {
       hmr: {
-        timeout: 120000
+        timeout: 180000 // Increased timeout for larger projects
       },
       fs: {
-        // Expand allowed directories to ensure all dependencies can be scanned
-        allow: ['.', '../', '../../']
+        // Expanded allowed directories for more thorough dependency scanning
+        allow: ['.', '../', '../../', '../../../']
       },
       watch: {
-        // Increase the watch timeout to prevent scanning issues
         usePolling: true,
-        interval: 1000
+        interval: 500, // Decreased interval for more frequent scanning
+        awaitWriteFinish: {
+          stabilityThreshold: 2000,
+          pollInterval: 100
+        }
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
       },
-      // Force include problematic dependencies
-      force: true
+      force: true,
+      entries: [
+        './src/components/**/*.astro',
+        './src/layouts/**/*.astro',
+        './src/pages/**/*.astro'
+      ]
     }
   }
 });
