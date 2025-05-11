@@ -17,8 +17,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
 
   // Skip auth for public paths
   if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path))) {
-    locals.skipAuth = true;
-    return;
+    return new Response(null, { status: 200 });
   }
 
   // Get auth token from cookie
@@ -61,6 +60,8 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
       email: user.email || '',
       role: user.user_metadata?.role || 'user'
     };
+
+    return new Response(null, { status: 200 });
 
   } catch (error) {
     console.error('Auth middleware error:', error);
