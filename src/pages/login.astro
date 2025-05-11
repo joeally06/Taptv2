@@ -17,6 +17,14 @@ if (userCookie?.value) {
         </h2>
       </div>
       
+      <div id="debug-panel" class="bg-gray-100 p-4 rounded-md text-sm font-mono overflow-auto max-h-48 hidden">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="font-bold">Debug Log</h3>
+          <button id="clear-debug" class="text-xs text-gray-600 hover:text-gray-800">Clear</button>
+        </div>
+        <div id="debug-log" class="space-y-1"></div>
+      </div>
+
       <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4 text-red-700"></div>
 
       <form id="login-form" class="mt-8 space-y-6">
@@ -45,6 +53,19 @@ if (userCookie?.value) {
           </div>
         </div>
 
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <input
+              id="show-debug"
+              type="checkbox"
+              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label for="show-debug" class="ml-2 block text-sm text-gray-900">
+              Show debug info
+            </label>
+          </div>
+        </div>
+
         <div>
           <button
             type="submit"
@@ -63,6 +84,10 @@ if (userCookie?.value) {
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
+  const debugPanel = document.getElementById('debug-panel');
+  const debugLog = document.getElementById('debug-log');
+  const showDebugCheckbox = document.getElementById('show-debug') as HTMLInputElement;
+  const clearDebugButton = document.getElementById('clear-debug');
 
   function showError(message: string) {
     if (errorMessage) {
@@ -77,6 +102,28 @@ if (userCookie?.value) {
     }
   }
 
+  function addDebugLog(message: string, type: 'info' | 'error' = 'info') {
+    if (debugLog) {
+      const entry = document.createElement('div');
+      entry.className = `text-xs ${type === 'error' ? 'text-red-600' : 'text-gray-600'}`;
+      entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      debugLog.appendChild(entry);
+      debugLog.scrollTop = debugLog.scrollHeight;
+    }
+  }
+
+  showDebugCheckbox?.addEventListener('change', () => {
+    if (debugPanel) {
+      debugPanel.classList.toggle('hidden', !showDebugCheckbox.checked);
+    }
+  });
+
+  clearDebugButton?.addEventListener('click', () => {
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
+  });
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError();
@@ -88,46 +135,54 @@ if (userCookie?.value) {
 
       if (!email || !password) {
         showError('Please fill in all fields');
+        addDebugLog('Missing email or password', 'error');
         return;
       }
 
+      addDebugLog('Creating Supabase client...');
       const supabase = createClient(
         import.meta.env.PUBLIC_SUPABASE_URL,
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY
       );
 
-      // Sign in with email and password
+      addDebugLog('Attempting sign in...');
       const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (signInError) {
+        addDebugLog(`Sign in error: ${signInError.message}`, 'error');
         throw signInError;
       }
 
       if (!session?.user) {
+        addDebugLog('No session or user data returned', 'error');
         throw new Error('Authentication failed');
       }
 
-      // Get user metadata to check role
+      addDebugLog('Sign in successful, getting user data...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
+        addDebugLog(`Error getting user data: ${userError?.message}`, 'error');
         throw userError || new Error('Failed to get user data');
       }
 
-      // Check if user has admin role in metadata
+      addDebugLog(`User metadata: ${JSON.stringify(user.user_metadata)}`);
       const isAdmin = user.user_metadata?.role === 'admin';
+      
       if (!isAdmin) {
+        addDebugLog('User is not an admin', 'error');
         throw new Error('Access denied: User is not an admin');
       }
 
-      // Redirect to admin dashboard
+      addDebugLog('Admin access confirmed, redirecting...');
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
       showError('Invalid email or password');
+      addDebugLog(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   });
 </script>
