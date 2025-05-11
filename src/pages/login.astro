@@ -2,16 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 
 // Check if user is already logged in
-const userCookie = Astro.cookies.get('user');
+const userCookie = Astro.cookies.get('sb-access-token');
 if (userCookie?.value) {
-  try {
-    const user = JSON.parse(userCookie.value);
-    if (user.role === 'admin') {
-      return Astro.redirect('/admin');
-    }
-  } catch (error) {
-    console.error('Error parsing user cookie:', error);
-  }
+  return Astro.redirect('/admin');
 }
 ---
 
@@ -130,16 +123,6 @@ if (userCookie?.value) {
         throw new Error('Access denied: User is not an admin');
       }
 
-      const userData = {
-        id: user.id,
-        email: user.email,
-        role: 'admin',
-        session: session.access_token
-      };
-
-      // Store user session in cookies
-      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Lax`;
-      
       // Redirect to admin dashboard
       window.location.href = '/admin';
     } catch (error) {

@@ -37,13 +37,21 @@ const navItems = [
 </nav>
 
 <script>
+  import { createClient } from '@supabase/supabase-js';
+
   const logoutButton = document.getElementById('logout-button');
   
-  logoutButton?.addEventListener('click', () => {
-    // Clear any stored session data
-    sessionStorage.clear();
-    localStorage.clear();
-    // Redirect to login page
-    window.location.href = '/login';
+  logoutButton?.addEventListener('click', async () => {
+    try {
+      const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+      );
+
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   });
 </script>

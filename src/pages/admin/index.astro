@@ -2,27 +2,24 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
 import { getLatestConference, getBoardMembers, getHallOfFameNominations } from '../../lib/db';
+import { supabase } from '../../lib/db';
 
-// Get user from cookies and add debug logging
-const userCookie = Astro.cookies.get('user');
-console.log('User cookie:', userCookie?.value);
-
+// Check authentication
+const authCookie = Astro.cookies.get('sb-access-token');
 let user = null;
-try {
-  user = userCookie ? JSON.parse(userCookie.value) : null;
-  console.log('Parsed user data:', user);
-} catch (error) {
-  console.error('Error parsing user cookie:', error);
+
+if (authCookie?.value) {
+  try {
+    const { data: { user: authUser }, error } = await supabase.auth.getUser(authCookie.value);
+    if (!error && authUser?.user_metadata?.role === 'admin') {
+      user = authUser;
+    }
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+  }
 }
 
-// Debug check for user role
-console.log('User role:', user?.role);
-
-// Redirect if not authenticated or not admin
-if (!user || user.role !== 'admin') {
-  console.log('Access denied - redirecting to login');
-  console.log('Auth status:', !!user);
-  console.log('User role check:', user?.role === 'admin');
+if (!user) {
   return Astro.redirect('/login');
 }
 
@@ -133,15 +130,5 @@ try {
         </div>
       </div>
     </div>
-
-    <!-- Debug Info (only visible in development) -->
-    {import.meta.env.DEV && (
-      <div class="mt-8 p-4 bg-gray-100 rounded-lg">
-        <h2 class="text-lg font-semibold mb-2">Debug Information</h2>
-        <pre class="whitespace-pre-wrap text-sm">
-          {JSON.stringify({ user }, null, 2)}
-        </pre>
-      </div>
-    )}
   </div>
 </Layout>
