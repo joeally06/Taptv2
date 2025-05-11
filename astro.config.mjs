@@ -16,11 +16,17 @@ export default defineConfig({
     },
     server: {
       hmr: {
-        timeout: 180000  // 3 minutes timeout
+        timeout: 300000  // 5 minutes timeout
       },
       fs: {
         strict: false,
-        allow: ['..', '../..']  // Expanded file system access
+        allow: [
+          '..',           // Allow parent directory
+          '../..',        // Allow grandparent directory
+          './src',        // Explicitly allow src directory
+          './public',     // Explicitly allow public directory
+          './components'  // Explicitly allow components directory
+        ]
       },
       watch: {
         usePolling: true,  // Enable polling for more reliable file watching
@@ -31,7 +37,11 @@ export default defineConfig({
       esbuildOptions: {
         target: 'es2022'
       },
-      force: true  // Force dependency optimization
+      force: true,     // Force dependency optimization
+      entries: [       // Explicitly specify entry points
+        './src/**/*.astro',
+        './src/**/*.ts'
+      ]
     }
   }
 });
