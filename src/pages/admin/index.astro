@@ -13,6 +13,8 @@ if (authCookie?.value) {
     const { data: { user: authUser }, error } = await supabase.auth.getUser(authCookie.value);
     if (!error && authUser?.user_metadata?.role === 'admin') {
       user = authUser;
+    } else {
+      console.error('Auth error or not admin:', error || 'Not admin');
     }
   } catch (error) {
     console.error('Error checking authentication:', error);
@@ -129,6 +131,12 @@ try {
           </a>
         </div>
       </div>
+    </div>
+
+    <!-- Debug Info (hidden in production) -->
+    <div class="mt-8 p-4 bg-gray-100 rounded-lg">
+      <h3 class="font-bold mb-2">Debug Info</h3>
+      <pre class="text-xs overflow-auto">{JSON.stringify({ user, authCookie: !!authCookie }, null, 2)}</pre>
     </div>
   </div>
 </Layout>
