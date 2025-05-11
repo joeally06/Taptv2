@@ -15,3 +15,4 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' 'unsafe-inline' 'unsafe-eval' *.netlify.app *.supabase.co; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' *.supabase.co;"
