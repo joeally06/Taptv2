@@ -11,7 +11,7 @@ export default defineConfig({
     host: true
   },
   devToolbar: {
-    enabled: true
+    enabled: false
   },
   vite: {
     build: {
