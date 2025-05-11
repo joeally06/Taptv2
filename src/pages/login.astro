@@ -63,15 +63,15 @@ if (userCookie?.value) {
       </form>
 
       <!-- Debug info section -->
-      <div id="debug-info" class="fixed bottom-4 right-4 w-96 max-h-[80vh] bg-gray-900 text-green-400 rounded-lg shadow-lg overflow-hidden z-50">
-        <div class="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700">
+      <div id="debug-info" class="fixed bottom-4 right-4 w-96 bg-gray-900 text-green-400 rounded-lg shadow-lg overflow-hidden z-50 cursor-move">
+        <div class="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700" id="debug-header">
           <span class="font-mono font-bold">Debug Log</span>
           <div class="space-x-2">
             <button id="minimize-debug" class="text-gray-400 hover:text-white px-2">[_]</button>
             <button id="clear-debug" class="text-gray-400 hover:text-white px-2">[×]</button>
           </div>
         </div>
-        <div id="debug-content" class="font-mono text-xs p-4 overflow-y-auto max-h-[60vh]"></div>
+        <div id="debug-content" class="font-mono text-xs p-4 overflow-y-auto" style="max-height: 60vh; resize: both;"></div>
       </div>
     </div>
   </div>
@@ -80,8 +80,9 @@ if (userCookie?.value) {
 <script>
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
-  const debugInfo = document.getElementById('debug-info');
-  const debugContent = document.getElementById('debug-content');
+  const debugInfo = document.getElementById('debug-info') as HTMLElement;
+  const debugContent = document.getElementById('debug-content') as HTMLElement;
+  const debugHeader = document.getElementById('debug-header') as HTMLElement;
   const clearDebugBtn = document.getElementById('clear-debug');
   const minimizeDebugBtn = document.getElementById('minimize-debug');
   let isMinimized = false;
@@ -89,6 +90,60 @@ if (userCookie?.value) {
   // Initialize debug log from localStorage
   if (debugContent && localStorage.getItem('debugLog')) {
     debugContent.innerHTML = localStorage.getItem('debugLog') || '';
+    debugContent.scrollTop = debugContent.scrollHeight;
+  }
+
+  // Initialize debug window position from localStorage
+  if (debugInfo) {
+    const position = localStorage.getItem('debugPosition');
+    if (position) {
+      const { x, y } = JSON.parse(position);
+      debugInfo.style.transform = `translate(${x}px, ${y}px)`;
+    }
+  }
+
+  // Make debug window draggable
+  let isDragging = false;
+  let currentX: number;
+  let currentY: number;
+  let initialX: number;
+  let initialY: number;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  debugHeader?.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
+
+  function dragStart(e: MouseEvent) {
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+
+    if (e.target === debugHeader) {
+      isDragging = true;
+    }
+  }
+
+  function drag(e: MouseEvent) {
+    if (isDragging) {
+      e.preventDefault();
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+      xOffset = currentX;
+      yOffset = currentY;
+
+      if (debugInfo) {
+        debugInfo.style.transform = `translate(${currentX}px, ${currentY}px)`;
+        // Save position to localStorage
+        localStorage.setItem('debugPosition', JSON.stringify({ x: currentX, y: currentY }));
+      }
+    }
+  }
+
+  function dragEnd() {
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
   }
 
   function showError(message: string) {
@@ -126,15 +181,20 @@ if (userCookie?.value) {
       isMinimized = !isMinimized;
       if (isMinimized) {
         debugContent.style.display = 'none';
-        debugInfo.style.height = 'auto';
         minimizeDebugBtn.textContent = '[+]';
       } else {
         debugContent.style.display = 'block';
-        debugInfo.style.height = 'auto';
         minimizeDebugBtn.textContent = '[_]';
       }
+      // Save state to localStorage
+      localStorage.setItem('debugMinimized', isMinimized.toString());
     }
   });
+
+  // Restore minimized state
+  if (localStorage.getItem('debugMinimized') === 'true') {
+    minimizeDebugBtn?.click();
+  }
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
