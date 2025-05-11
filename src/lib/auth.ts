@@ -6,7 +6,13 @@ if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANO
 
 const supabase = createClient(
   import.meta.env.PUBLIC_SUPABASE_URL,
-  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      storageKey: 'sb-access-token'
+    }
+  }
 );
 
 export async function authenticateUser(email: string, password: string) {
@@ -47,6 +53,9 @@ export async function authenticateUser(email: string, password: string) {
       throw new Error('Access denied: User is not an admin');
     }
 
+    // Store the session token
+    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+
     return {
       id: user.id,
       email: user.email,
@@ -59,40 +68,14 @@ export async function authenticateUser(email: string, password: string) {
   }
 }
 
-export async function createUser(email: string, password: string, role: string = 'user') {
+export async function signOut() {
   try {
-    console.log('Creating new user:', { email, role });
-
-    // Create the user in Supabase Auth
-    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: role
-        }
-      }
-    });
-
-    if (signUpError) {
-      console.error('Sign up error:', signUpError);
-      throw signUpError;
-    }
-
-    if (!user) {
-      throw new Error('Failed to create user');
-    }
-
-    console.log('User created successfully:', user);
-
-    return {
-      id: user.id,
-      email: user.email,
-      role: role
-    };
+    await supabase.auth.signOut();
+    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    return true;
   } catch (error) {
-    console.error('User creation failed:', error);
-    throw error;
+    console.error('Sign out error:', error);
+    return false;
   }
 }
 
