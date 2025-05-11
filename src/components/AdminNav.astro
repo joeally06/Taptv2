@@ -44,8 +44,8 @@ const navItems = [
   logoutButton?.addEventListener('click', async () => {
     try {
       const supabase = createClient(
-        import.meta.env.PUBLIC_SUPABASE_URL,
-        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
       );
 
       await supabase.auth.signOut();
