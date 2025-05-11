@@ -3,18 +3,9 @@ import tailwind from '@astrojs/tailwind';
 import netlify from '@astrojs/netlify';
 
 export default defineConfig({
-  output: 'server',
-  adapter: netlify({
-    edgeMiddleware: true
-  }),
+  output: 'hybrid',
+  adapter: netlify(),
   integrations: [tailwind()],
-  server: {
-    port: 4321,
-    host: true
-  },
-  devToolbar: {
-    enabled: false
-  },
   vite: {
     build: {
       target: 'es2022'
