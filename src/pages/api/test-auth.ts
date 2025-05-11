@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    // Set the auth cookie for the Supabase client
+    // Extract token and verify user
     const token = authCookie.split('=')[1].trim();
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -40,13 +40,20 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
+    // Check if user is admin
+    const isAdmin = user.user_metadata?.role === 'admin';
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Successfully authenticated with Supabase',
-        user
+        message: isAdmin ? 'Successfully authenticated as admin' : 'User is not an admin',
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.user_metadata?.role
+        }
       }),
-      { status: 200, headers }
+      { status: isAdmin ? 200 : 403, headers }
     );
   } catch (error) {
     console.error('Authentication test error:', error);
