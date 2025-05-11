@@ -141,3 +141,33 @@ export async function deleteBoardMember(id: string) {
     throw error;
   }
 }
+
+export async function createLuncheonRegistration(data: any) {
+  const { data: registration, error } = await supabase
+    .from('luncheon_registrations')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating luncheon registration:', error);
+    throw error;
+  }
+
+  return registration;
+}
+
+export async function createScholarshipApplication(data: any) {
+  const { data: application, error } = await supabase
+    .from('scholarship_applications')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating scholarship application:', error);
+    throw error;
+  }
+
+  return application;
+}
