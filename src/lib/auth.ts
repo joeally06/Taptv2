@@ -13,35 +13,43 @@ export async function authenticateUser(email: string, password: string) {
   try {
     console.log('Attempting authentication for:', email);
     
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // First try to sign in
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (error) {
-      console.error('Supabase auth error:', error);
-      throw error;
+    if (authError) {
+      console.error('Authentication error:', authError);
+      throw authError;
     }
 
-    if (!data.user) {
+    if (!authData.user) {
       console.error('No user data returned');
       throw new Error('Authentication failed');
     }
 
-    console.log('Authentication successful:', data.user);
+    console.log('Authentication successful:', authData.user);
 
     // Get user metadata including role
-    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !currentUser) {
+    if (userError || !user) {
       console.error('Error getting user data:', userError);
       throw new Error('Failed to get user data');
     }
 
+    // Check if user has admin role in metadata
+    const isAdmin = user.user_metadata?.role === 'admin';
+    if (!isAdmin) {
+      console.error('User is not an admin');
+      throw new Error('Access denied');
+    }
+
     return {
-      id: currentUser.id,
-      email: currentUser.email,
-      role: currentUser.user_metadata?.role || 'user'
+      id: user.id,
+      email: user.email,
+      role: 'admin'
     };
   } catch (error) {
     console.error('Authentication error:', error);

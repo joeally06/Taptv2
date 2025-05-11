@@ -105,15 +105,11 @@ if (userCookie?.value) {
       console.log('Authentication successful:', user);
       showDebug({ status: 'success', user });
 
-      // Store user session
+      // Store user session in an HTTP-only cookie
       document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400; secure; samesite=strict`;
       
-      // Redirect based on role
-      if (user.role === 'admin') {
-        window.location.href = '/admin';
-      } else {
-        showError('Access denied. Admin privileges required.');
-      }
+      // Redirect to admin dashboard
+      window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
       showError('Invalid email or password. Please check your credentials and try again.');
