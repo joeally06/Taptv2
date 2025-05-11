@@ -1,11 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createClient } from '@libsql/client';
-import { join } from 'path';
-
-const dataDir = join(process.cwd(), 'data');
-const db = createClient({
-  url: `file:${join(dataDir, 'conference.db')}`
-});
+import { supabase } from '../../lib/supabase';
 
 export const GET: APIRoute = async ({ url }) => {
   const headers = {
@@ -16,49 +10,48 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     // Get registration data
     const regId = url.searchParams.get('regId');
-    const reg = regId ? await db.execute({
-      sql: `
-        SELECT r.*, json_group_array(json_object('firstName', a.first_name, 'lastName', a.last_name)) as attendees
-        FROM registrations r
-        LEFT JOIN attendees a ON r.id = a.registration_id
-        WHERE r.id = ?
-        GROUP BY r.id
-      `,
-      args: [regId]
-    }) : { rows: [] };
+    const reg = regId ? await supabase
+      .from('registrations')
+      .select(`
+        *,
+        attendees:registration_attendees(*)
+      `)
+      .eq('id', regId)
+      .single() : { data: null };
 
     // Get luncheon registration
     const lunchId = url.searchParams.get('lunchId');
-    const lunch = lunchId ? await db.execute({
-      sql: `
-        SELECT lr.*, le.location, le.city
-        FROM luncheon_registrations lr
-        JOIN luncheon_events le ON lr.event_id = le.id
-        WHERE lr.id = ?
-      `,
-      args: [lunchId]
-    }) : { rows: [] };
+    const lunch = lunchId ? await supabase
+      .from('luncheon_registrations')
+      .select(`
+        *,
+        event:luncheon_events(*)
+      `)
+      .eq('id', lunchId)
+      .single() : { data: null };
 
     // Get HOF nomination
     const hofId = url.searchParams.get('hofId');
-    const hof = hofId ? await db.execute({
-      sql: 'SELECT * FROM hall_of_fame_nominations WHERE id = ?',
-      args: [hofId]
-    }) : { rows: [] };
+    const hof = hofId ? await supabase
+      .from('hall_of_fame_nominations')
+      .select()
+      .eq('id', hofId)
+      .single() : { data: null };
 
     // Get scholarship application
     const scholarId = url.searchParams.get('scholarId');
-    const scholar = scholarId ? await db.execute({
-      sql: 'SELECT * FROM scholarship_applications WHERE id = ?',
-      args: [scholarId]
-    }) : { rows: [] };
+    const scholar = scholarId ? await supabase
+      .from('scholarship_applications')
+      .select()
+      .eq('id', scholarId)
+      .single() : { data: null };
 
     return new Response(
       JSON.stringify({
-        registration: reg.rows[0],
-        luncheon: lunch.rows[0],
-        hallOfFame: hof.rows[0],
-        scholarship: scholar.rows[0]
+        registration: reg.data,
+        luncheon: lunch.data,
+        hallOfFame: hof.data,
+        scholarship: scholar.data
       }),
       { status: 200, headers }
     );

@@ -69,6 +69,7 @@ export async function authenticateUser(email: string, password: string) {
       throw new Error('Access denied: User is not an admin');
     }
 
+    // Set the session cookie
     setSessionCookie(session.access_token);
 
     return {
