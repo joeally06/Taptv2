@@ -52,7 +52,7 @@ export default defineConfig({
         './src/components/**/*.astro',
         './src/layouts/**/*.astro'
       ],
-      exclude: ['node_modules/**/*']
+      exclude: ['node_modules']
     },
     // Add caching options
     cacheDir: '.vite',
