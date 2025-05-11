@@ -4,7 +4,8 @@ const { currentPath } = Astro.props;
 const navItems = [
   { path: '/admin', label: 'Dashboard' },
   { path: '/admin/board', label: 'Board Members' },
-  { path: '/admin/conferences', label: 'Conferences' }
+  { path: '/admin/conferences', label: 'Conferences' },
+  { path: '/admin/nominations', label: 'Hall of Fame' }
 ];
 ---
 
@@ -40,7 +41,8 @@ const navItems = [
   const logoutButton = document.getElementById('logout-button');
   
   logoutButton?.addEventListener('click', () => {
-    // Clear any stored session data
+    // Clear session data
+    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
     sessionStorage.clear();
     localStorage.clear();
     // Redirect to login page

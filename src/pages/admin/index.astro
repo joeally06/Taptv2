@@ -2,26 +2,16 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
 
-// Get user from cookies and add debug logging
+// Get user from cookies and verify admin role
 const userCookie = Astro.cookies.get('user');
-console.log('User cookie:', userCookie?.value);
-
 let user = null;
 try {
   user = userCookie ? JSON.parse(userCookie.value) : null;
-  console.log('Parsed user data:', user);
 } catch (error) {
   console.error('Error parsing user cookie:', error);
 }
 
-// Debug check for user role
-console.log('User role:', user?.role);
-
-// Redirect if not authenticated or not admin
 if (!user || user.role !== 'admin') {
-  console.log('Access denied - redirecting to login');
-  console.log('Auth status:', !!user);
-  console.log('User role check:', user?.role === 'admin');
   return Astro.redirect('/login');
 }
 ---
@@ -35,28 +25,33 @@ if (!user || user.role !== 'admin') {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <a href="/admin/board" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
         <h2 class="text-xl font-semibold text-primary-700 mb-2">Board Members</h2>
-        <p class="text-gray-600">Manage TAPT board member information</p>
+        <p class="text-gray-600">Manage TAPT board member information and positions</p>
+        <ul class="mt-4 text-sm text-gray-500">
+          <li>• Add new board members</li>
+          <li>• Update existing members</li>
+          <li>• Manage contact information</li>
+        </ul>
       </a>
       
       <a href="/admin/conferences" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
         <h2 class="text-xl font-semibold text-primary-700 mb-2">Conferences</h2>
         <p class="text-gray-600">Manage conference details and registrations</p>
+        <ul class="mt-4 text-sm text-gray-500">
+          <li>• Create new conferences</li>
+          <li>• Update conference details</li>
+          <li>• View registrations</li>
+        </ul>
       </a>
 
-      <a href="/admin/users" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-        <h2 class="text-xl font-semibold text-primary-700 mb-2">Users</h2>
-        <p class="text-gray-600">Manage user accounts and permissions</p>
+      <a href="/admin/nominations" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+        <h2 class="text-xl font-semibold text-primary-700 mb-2">Hall of Fame</h2>
+        <p class="text-gray-600">Review and manage Hall of Fame nominations</p>
+        <ul class="mt-4 text-sm text-gray-500">
+          <li>• View nominations</li>
+          <li>• Review submissions</li>
+          <li>• Manage inductees</li>
+        </ul>
       </a>
     </div>
-
-    <!-- Debug Info (only visible in development) -->
-    {import.meta.env.DEV && (
-      <div class="mt-8 p-4 bg-gray-100 rounded-lg">
-        <h2 class="text-lg font-semibold mb-2">Debug Information</h2>
-        <pre class="whitespace-pre-wrap text-sm">
-          {JSON.stringify({ user }, null, 2)}
-        </pre>
-      </div>
-    )}
   </div>
 </Layout>
