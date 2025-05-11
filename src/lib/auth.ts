@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { User } from '../types/database';
+import { AuthError } from './errors';
 
 export async function authenticateUser(email: string, password: string): Promise<User> {
   try {
@@ -8,18 +9,14 @@ export async function authenticateUser(email: string, password: string): Promise
       password
     });
 
-    if (signInError) throw signInError;
-    if (!session?.user) throw new Error('Authentication failed');
+    if (signInError) throw new AuthError(signInError.message);
+    if (!session?.user) throw new AuthError('Authentication failed');
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw userError || new Error('Failed to get user data');
+    if (userError || !user) throw new AuthError('Failed to get user data');
 
     const isAdmin = user.user_metadata?.role === 'admin';
-    if (!isAdmin) throw new Error('Access denied: User is not an admin');
-
-    // Set session cookie with secure flags
-    const secure = window.location.protocol === 'https:';
-    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}${secure ? '; secure' : ''}; samesite=lax`;
+    if (!isAdmin) throw new AuthError('Access denied: User is not an admin');
 
     return {
       id: user.id,
@@ -29,42 +26,35 @@ export async function authenticateUser(email: string, password: string): Promise
     };
   } catch (error) {
     console.error('Authentication error:', error);
-    throw error;
+    throw error instanceof AuthError ? error : new AuthError('Authentication failed');
   }
 }
 
 export async function signOut(): Promise<void> {
   try {
     await supabase.auth.signOut();
-    // Clear session cookie
     document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=lax';
   } catch (error) {
     console.error('Sign out error:', error);
-    throw error;
+    throw new AuthError('Failed to sign out');
   }
 }
 
 export async function refreshSession() {
   try {
     const { data: { session }, error } = await supabase.auth.refreshSession();
-    if (error) throw error;
-    if (!session) throw new Error('No session to refresh');
-    
-    // Update session cookie
-    const secure = window.location.protocol === 'https:';
-    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}${secure ? '; secure' : ''}; samesite=lax`;
-    
+    if (error) throw new AuthError(error.message);
+    if (!session) throw new AuthError('No session to refresh');
     return session;
   } catch (error) {
     console.error('Session refresh error:', error);
-    throw error;
+    throw error instanceof AuthError ? error : new AuthError('Failed to refresh session');
   }
 }
 
 export async function isAuthenticated(): Promise<boolean> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
+    const { data: { session } } = await supabase.auth.getSession();
     return !!session;
   } catch (error) {
     console.error('Auth check error:', error);

@@ -1,21 +1,25 @@
 import type { MiddlewareResponseHandler } from 'astro';
 import { supabase } from '../lib/supabase';
 
-export const authMiddleware: MiddlewareResponseHandler = async ({ request, locals }) => {
-  // Skip auth check for public routes and static assets
+const PUBLIC_PATHS = [
+  '/login',
+  '/register',
+  '/',
+  '/images',
+  '/favicon.svg',
+  '/_astro',
+  '/api/auth-status',
+  '/api/test-db'
+];
+
+export const authMiddleware: MiddlewareResponseHandler = async (context) => {
+  const { request, locals } = context;
   const url = new URL(request.url);
-  const publicPaths = [
-    '/login', 
-    '/register', 
-    '/', 
-    '/images', 
-    '/favicon.svg',
-    '/_astro',
-    '/api/auth-status'
-  ];
-  
-  if (publicPaths.some(path => url.pathname.startsWith(path))) {
-    return new Response(null, { status: 200 });
+
+  // Skip auth for public paths
+  if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path))) {
+    locals.skipAuth = true;
+    return await context.next();
   }
 
   // Get auth token from cookie
@@ -23,57 +27,37 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
     .find(c => c.trim().startsWith('sb-access-token='));
 
   if (!authCookie) {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': '/login'
-      }
-    });
+    return Response.redirect(new URL('/login', request.url), 302);
   }
 
   const token = authCookie.split('=')[1].trim();
-  
+
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': '/login',
-          'Set-Cookie': 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=lax'
-        }
-      });
+      return Response.redirect(new URL('/login', request.url), 302);
     }
 
     // Check admin access for admin routes
     if (url.pathname.startsWith('/admin')) {
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        return new Response(null, {
-          status: 302,
-          headers: {
-            'Location': '/'
-          }
-        });
+        return Response.redirect(new URL('/', request.url), 302);
       }
     }
 
-    // Set user in locals for use in routes
+    // Set user in locals
     locals.user = {
       id: user.id,
       email: user.email || '',
       role: user.user_metadata?.role || 'user'
     };
 
-    return new Response(null, { status: 200 });
+    // Continue to the next middleware/route
+    return await context.next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': '/login'
-      }
-    });
+    return Response.redirect(new URL('/login', request.url), 302);
   }
 };
