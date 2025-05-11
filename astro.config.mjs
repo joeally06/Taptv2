@@ -23,8 +23,7 @@ export default defineConfig({
       },
       fs: {
         strict: false,
-        // Ensure node_modules is explicitly allowed and at the root of the allow list
-        allow: ['node_modules', '.', './src', './public']
+        allow: ['.', 'node_modules']
       },
       watch: {
         usePolling: true,
@@ -34,7 +33,8 @@ export default defineConfig({
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      }
+      },
+      force: true
     }
   }
 });
