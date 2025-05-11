@@ -10,28 +10,15 @@ export default defineConfig({
     build: {
       target: 'es2022'
     },
-    server: {
-      hmr: {
-        timeout: 300000
-      },
-      fs: {
-        strict: false,
-        allow: ['.', 'node_modules']
-      },
-      watch: {
-        usePolling: true,
-        interval: 1000
-      }
-    },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      },
-      force: true,
-      exclude: [],
-      include: []
+      }
     },
-    clearScreen: false,
-    cacheDir: '.vite'
+    server: {
+      watch: {
+        usePolling: true
+      }
+    }
   }
 });

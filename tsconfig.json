@@ -2,10 +2,21 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "moduleResolution": "node16"
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["astro/client", "node"]
   },
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro"],
+  "exclude": ["node_modules", "dist"]
 }
