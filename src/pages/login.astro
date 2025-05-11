@@ -267,10 +267,10 @@ if (userCookie?.value) {
 
       updateDebug({ status: 'success', user: userData });
 
-      // Store user session in a cookie
-      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; secure; samesite=strict`;
+      // Store user session in cookies
+      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Strict`;
       
-      // Redirect to admin dashboard
+      // Force reload to trigger server-side redirect
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
