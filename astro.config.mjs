@@ -7,7 +7,7 @@ export default defineConfig({
   output: 'server',
   integrations: [tailwind()],
   devToolbar: {
-    enabled: false  // Temporarily disable dev toolbar to work around fetch error
+    enabled: true  // Re-enable dev toolbar
   },
   vite: {
     build: {
@@ -18,13 +18,21 @@ export default defineConfig({
         timeout: 120000
       },
       fs: {
-        allow: ['.']
+        // Expand allowed directories to ensure all dependencies can be scanned
+        allow: ['.', '../', '../../']
+      },
+      watch: {
+        // Increase the watch timeout to prevent scanning issues
+        usePolling: true,
+        interval: 1000
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      }
+      },
+      // Force include problematic dependencies
+      force: true
     }
   }
 });
