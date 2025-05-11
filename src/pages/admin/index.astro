@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
 import { getLatestConference, getBoardMembers, getHallOfFameNominations } from '../../lib/db';
-import { supabase } from '../../lib/db';
+import { supabase } from '../../lib/supabase';
 
 // Check authentication
 const authCookie = Astro.cookies.get('sb-access-token');
