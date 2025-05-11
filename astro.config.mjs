@@ -21,11 +21,14 @@ export default defineConfig({
       fs: {
         strict: false,
         allow: [
+          '.',            // Allow current directory
           '..',           // Allow parent directory
           '../..',        // Allow grandparent directory
           './src',        // Explicitly allow src directory
           './public',     // Explicitly allow public directory
-          './components'  // Explicitly allow components directory
+          './components', // Explicitly allow components directory
+          './layouts',    // Explicitly allow layouts directory
+          './lib'         // Explicitly allow lib directory
         ]
       },
       watch: {
@@ -40,7 +43,11 @@ export default defineConfig({
       force: true,     // Force dependency optimization
       entries: [       // Explicitly specify entry points
         './src/**/*.astro',
-        './src/**/*.ts'
+        './src/**/*.ts',
+        './src/components/**/*.astro',
+        './src/layouts/**/*.astro',
+        './src/pages/**/*.astro',
+        './src/lib/**/*.ts'
       ]
     }
   }
