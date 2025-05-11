@@ -1,14 +1,24 @@
 import type { MiddlewareResponseHandler } from 'astro';
 import { supabase } from '../lib/supabase';
 
-export const authMiddleware: MiddlewareResponseHandler = async ({ request, redirect }) => {
-  // Skip auth check for public routes
+export const authMiddleware: MiddlewareResponseHandler = async ({ request, redirect, locals }) => {
+  // Skip auth check for public routes and static assets
   const url = new URL(request.url);
-  const publicPaths = ['/login', '/register', '/', '/images', '/favicon.svg'];
+  const publicPaths = [
+    '/login', 
+    '/register', 
+    '/', 
+    '/images', 
+    '/favicon.svg',
+    '/_astro',
+    '/api/auth-status'
+  ];
+  
   if (publicPaths.some(path => url.pathname.startsWith(path))) {
     return;
   }
 
+  // Get auth token from cookie
   const authCookie = request.headers.get('cookie')?.split(';')
     .find(c => c.trim().startsWith('sb-access-token='));
 
@@ -20,6 +30,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
   
   try {
     const { data: { user }, error } = await supabase.auth.getUser(token);
+    
     if (error || !user) {
       return redirect('/login', {
         headers: {
@@ -29,9 +40,19 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
     }
 
     // Check admin access for admin routes
-    if (url.pathname.startsWith('/admin') && user.user_metadata?.role !== 'admin') {
-      return redirect('/');
+    if (url.pathname.startsWith('/admin')) {
+      const isAdmin = user.user_metadata?.role === 'admin';
+      if (!isAdmin) {
+        return redirect('/');
+      }
     }
+
+    // Set user in locals for use in routes
+    locals.user = {
+      id: user.id,
+      email: user.email || '',
+      role: user.user_metadata?.role || 'user'
+    };
 
     return;
   } catch (error) {

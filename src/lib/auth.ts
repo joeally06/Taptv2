@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
+import type { User } from '../types/database';
 
-export async function authenticateUser(email: string, password: string) {
+export async function authenticateUser(email: string, password: string): Promise<User> {
   try {
     const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -16,14 +17,15 @@ export async function authenticateUser(email: string, password: string) {
     const isAdmin = user.user_metadata?.role === 'admin';
     if (!isAdmin) throw new Error('Access denied: User is not an admin');
 
-    // Set session cookie
-    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; secure; samesite=lax`;
+    // Set session cookie with secure flags
+    const secure = window.location.protocol === 'https:';
+    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}${secure ? '; secure' : ''}; samesite=lax`;
 
     return {
       id: user.id,
-      email: user.email,
+      email: user.email || '',
       role: 'admin',
-      session: session.access_token
+      created_at: new Date().toISOString()
     };
   } catch (error) {
     console.error('Authentication error:', error);
@@ -31,15 +33,14 @@ export async function authenticateUser(email: string, password: string) {
   }
 }
 
-export async function signOut() {
+export async function signOut(): Promise<void> {
   try {
     await supabase.auth.signOut();
     // Clear session cookie
     document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=lax';
-    return true;
   } catch (error) {
     console.error('Sign out error:', error);
-    return false;
+    throw error;
   }
 }
 
@@ -50,7 +51,8 @@ export async function refreshSession() {
     if (!session) throw new Error('No session to refresh');
     
     // Update session cookie
-    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; secure; samesite=lax`;
+    const secure = window.location.protocol === 'https:';
+    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}${secure ? '; secure' : ''}; samesite=lax`;
     
     return session;
   } catch (error) {
