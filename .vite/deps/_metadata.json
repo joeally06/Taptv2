@@ -2,30 +2,45 @@
   "hash": "6159e019",
   "configHash": "ee4b7a7f",
   "lockfileHash": "04e0ce3a",
-  "browserHash": "7a2ad6f4",
+  "browserHash": "5a98695b",
   "optimized": {
     "astro > cssesc": {
       "src": "../../node_modules/cssesc/cssesc.js",
       "file": "astro___cssesc.js",
-      "fileHash": "bd3bd8b2",
+      "fileHash": "52d22f02",
       "needsInterop": true
     },
     "astro > aria-query": {
       "src": "../../node_modules/aria-query/lib/index.js",
       "file": "astro___aria-query.js",
-      "fileHash": "6de502c4",
+      "fileHash": "812ea9f0",
       "needsInterop": true
     },
     "astro > axobject-query": {
       "src": "../../node_modules/axobject-query/lib/index.js",
       "file": "astro___axobject-query.js",
-      "fileHash": "8dde6adb",
+      "fileHash": "582cdea7",
       "needsInterop": true
+    },
+    "@supabase/supabase-js": {
+      "src": "../../node_modules/@supabase/supabase-js/dist/module/index.js",
+      "file": "@supabase_supabase-js.js",
+      "fileHash": "bab0328c",
+      "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-BUSYA2B4": {
-      "file": "chunk-BUSYA2B4.js"
+    "browser-VLKRZ7RP": {
+      "file": "browser-VLKRZ7RP.js"
+    },
+    "chunk-C5A7FNJB": {
+      "file": "chunk-C5A7FNJB.js"
+    },
+    "browser-B5UES2FC": {
+      "file": "browser-B5UES2FC.js"
+    },
+    "chunk-V4OQ3NZ2": {
+      "file": "chunk-V4OQ3NZ2.js"
     }
   }
 }
