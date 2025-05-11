@@ -7,8 +7,6 @@ export async function createHallOfFameNomination(data: {
   nomination_reason: string;
   district: string;
 }) {
-  console.log('Creating nomination with data:', data);
-
   const { data: nomination, error } = await supabase
     .from('hall_of_fame_nominations')
     .insert([data])
@@ -20,7 +18,6 @@ export async function createHallOfFameNomination(data: {
     throw error;
   }
 
-  console.log('Nomination created successfully:', nomination);
   return nomination;
 }
 
