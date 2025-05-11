@@ -9,6 +9,10 @@ export default defineConfig({
   devToolbar: {
     enabled: false  // Temporarily disable dev toolbar to work around fetch error
   },
+  server: {
+    port: 4321,
+    host: true
+  },
   vite: {
     build: {
       target: 'es2022'
@@ -18,7 +22,8 @@ export default defineConfig({
         timeout: 120000
       },
       fs: {
-        allow: ['.']
+        strict: false,
+        allow: ['.', '../']
       }
     },
     optimizeDeps: {

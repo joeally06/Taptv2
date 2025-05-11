@@ -78,6 +78,8 @@ if (userCookie?.value) {
 </Layout>
 
 <script>
+  import { createClient } from '@supabase/supabase-js';
+
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
   const debugInfo = document.getElementById('debug-info') as HTMLElement;
@@ -212,8 +214,6 @@ if (userCookie?.value) {
     try {
       updateDebug({ status: 'attempting', email });
 
-      const { createClient } = await import('@supabase/supabase-js');
-      
       if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
         throw new Error('Missing Supabase environment variables');
       }
