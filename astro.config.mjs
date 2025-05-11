@@ -4,44 +4,34 @@ import netlify from '@astrojs/netlify';
 
 export default defineConfig({
   output: 'hybrid',
-  adapter: netlify({
-    edgeMiddleware: true
-  }),
+  adapter: netlify(),
   integrations: [tailwind()],
   vite: {
     build: {
-      target: 'es2022',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'supabase': ['@supabase/supabase-js'],
-            'auth': ['@supabase/auth-ui-react', '@supabase/auth-ui-shared']
-          }
-        }
+      target: 'es2022'
+    },
+    server: {
+      hmr: {
+        timeout: 300000
+      },
+      fs: {
+        strict: false,
+        allow: ['.', 'node_modules']
+      },
+      watch: {
+        usePolling: true,
+        interval: 1000
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      }
-    },
-    server: {
-      watch: {
-        usePolling: true
       },
-      fs: {
-        strict: false,
-        allow: ['.']
-      },
-      proxy: {
-        '/.netlify/functions': {
-          target: 'http://localhost:9999',
-          changeOrigin: true
-        }
-      }
+      force: true,
+      exclude: [],
+      include: []
     },
-    ssr: {
-      noExternal: ['@supabase/supabase-js']
-    }
+    clearScreen: false,
+    cacheDir: '.vite'
   }
 });

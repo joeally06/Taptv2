@@ -1,63 +1,114 @@
 import { supabase } from './supabase';
-import type { User } from '../types/database';
-import { AuthError } from './errors';
+import { setSessionCookie, clearSessionCookie } from './session';
 
-export async function authenticateUser(email: string, password: string): Promise<User> {
+export async function createUser(email: string, password: string, role: string = 'user') {
   try {
+    const { data: { user }, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role
+        }
+      }
+    });
+
+    if (error) {
+      console.error('User creation error:', error);
+      throw error;
+    }
+
+    if (!user) {
+      throw new Error('No user data returned');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role
+    };
+  } catch (error) {
+    console.error('User creation process failed:', error);
+    throw error;
+  }
+}
+
+export async function authenticateUser(email: string, password: string) {
+  try {
+    console.log('Attempting authentication for:', email);
+    
     const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (signInError) throw new AuthError(signInError.message);
-    if (!session?.user) throw new AuthError('Authentication failed');
+    if (signInError) {
+      console.error('Sign in error:', signInError);
+      throw signInError;
+    }
+
+    if (!session?.user) {
+      console.error('No session or user data returned');
+      throw new Error('Authentication failed');
+    }
+
+    console.log('Session established:', session);
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new AuthError('Failed to get user data');
+    
+    if (userError || !user) {
+      console.error('Error getting user data:', userError);
+      throw userError || new Error('Failed to get user data');
+    }
+
+    console.log('User metadata:', user.user_metadata);
 
     const isAdmin = user.user_metadata?.role === 'admin';
-    if (!isAdmin) throw new AuthError('Access denied: User is not an admin');
+    if (!isAdmin) {
+      console.error('User is not an admin:', user.user_metadata);
+      throw new Error('Access denied: User is not an admin');
+    }
+
+    // Set the session cookie
+    setSessionCookie(session.access_token);
 
     return {
       id: user.id,
-      email: user.email || '',
+      email: user.email,
       role: 'admin',
-      created_at: new Date().toISOString()
+      session: session.access_token
     };
   } catch (error) {
-    console.error('Authentication error:', error);
-    throw error instanceof AuthError ? error : new AuthError('Authentication failed');
+    console.error('Authentication process failed:', error);
+    throw error;
   }
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut() {
   try {
     await supabase.auth.signOut();
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=lax';
+    clearSessionCookie();
+    return true;
   } catch (error) {
     console.error('Sign out error:', error);
-    throw new AuthError('Failed to sign out');
+    return false;
   }
 }
 
-export async function refreshSession() {
+export async function isAdmin(userId: string) {
   try {
-    const { data: { session }, error } = await supabase.auth.refreshSession();
-    if (error) throw new AuthError(error.message);
-    if (!session) throw new AuthError('No session to refresh');
-    return session;
-  } catch (error) {
-    console.error('Session refresh error:', error);
-    throw error instanceof AuthError ? error : new AuthError('Failed to refresh session');
-  }
-}
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-export async function isAuthenticated(): Promise<boolean> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    return !!session;
+    if (error || !user) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+
+    const isAdmin = user.user_metadata?.role === 'admin';
+    console.log('Admin check result:', { userId, isAdmin, metadata: user.user_metadata });
+    return isAdmin;
   } catch (error) {
-    console.error('Auth check error:', error);
+    console.error('Error checking admin status:', error);
     return false;
   }
 }
