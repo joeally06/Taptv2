@@ -3,7 +3,7 @@ import { authMiddleware } from './middleware/auth';
 import type { MiddlewareResponseHandler } from 'astro';
 
 // Security headers middleware
-const securityHeaders: MiddlewareResponseHandler = async ({ request }) => {
+const securityHeaders: MiddlewareResponseHandler = async ({ request, locals }) => {
   const response = new Response(null, {
     status: 200,
     headers: {

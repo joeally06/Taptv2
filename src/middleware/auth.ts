@@ -9,7 +9,13 @@ const PUBLIC_PATHS = [
   '/favicon.svg',
   '/_astro',
   '/api/auth-status',
-  '/api/test-db'
+  '/api/test-db',
+  '/hall-of-fame',
+  '/board',
+  '/advisory-board',
+  '/conference-registration',
+  '/luncheon-registration',
+  '/scholarship'
 ];
 
 export const authMiddleware: MiddlewareResponseHandler = async ({ request, locals }) => {
@@ -17,7 +23,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
 
   // Skip auth for public paths
   if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path))) {
-    return new Response(null, { status: 200 });
+    return;
   }
 
   // Get auth token from cookie
@@ -25,10 +31,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
     .find(c => c.trim().startsWith('sb-access-token='));
 
   if (!authCookie) {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: '/login' }
-    });
+    return Response.redirect(new URL('/login', request.url), 302);
   }
 
   const token = authCookie.split('=')[1].trim();
@@ -37,20 +40,14 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return new Response(null, {
-        status: 302,
-        headers: { Location: '/login' }
-      });
+      return Response.redirect(new URL('/login', request.url), 302);
     }
 
     // Check admin access for admin routes
     if (url.pathname.startsWith('/admin')) {
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        return new Response(null, {
-          status: 302,
-          headers: { Location: '/' }
-        });
+        return Response.redirect(new URL('/', request.url), 302);
       }
     }
 
@@ -61,13 +58,8 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
       role: user.user_metadata?.role || 'user'
     };
 
-    return new Response(null, { status: 200 });
-
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return new Response(null, {
-      status: 302,
-      headers: { Location: '/login' }
-    });
+    return Response.redirect(new URL('/login', request.url), 302);
   }
 };
