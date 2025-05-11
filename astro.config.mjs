@@ -12,50 +12,26 @@ export default defineConfig({
   },
   vite: {
     build: {
-      target: 'es2022',
-      // Add additional build optimizations
-      cssCodeSplit: false,
-      minify: false,
-      // Increase chunk size limit
-      chunkSizeWarningLimit: 1000
+      target: 'es2022'
     },
     server: {
       hmr: {
-        timeout: 600000  // Increase to 10 minutes timeout
+        timeout: 180000  // 3 minutes timeout
       },
       fs: {
         strict: false,
-        allow: [
-          '/home/project/src/components',
-          '/home/project/src/layouts',
-          '/home/project/src/pages',
-          '/home/project/src',
-          '/'
-        ]
+        allow: ['..', '../..']  // Expanded file system access
       },
       watch: {
-        usePolling: true,
-        interval: 1000,
-        // Add additional watch options
-        followSymlinks: false,
-        ignored: ['**/node_modules/**', '**/.git/**']
+        usePolling: true,  // Enable polling for more reliable file watching
+        interval: 1000     // Check for changes every second
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
       },
-      force: true,
-      // Add additional optimization options
-      entries: [
-        './src/pages/**/*.astro',
-        './src/components/**/*.astro',
-        './src/layouts/**/*.astro'
-      ],
-      exclude: ['node_modules']
-    },
-    // Add caching options
-    cacheDir: '.vite',
-    clearScreen: false
+      force: true  // Force dependency optimization
+    }
   }
 });
