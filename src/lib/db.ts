@@ -7,8 +7,6 @@ export async function createHallOfFameNomination(data: {
   nomination_reason: string;
   district: string;
 }) {
-  console.log('Creating nomination with data:', data);
-
   const { data: nomination, error } = await supabase
     .from('hall_of_fame_nominations')
     .insert([data])
@@ -20,7 +18,6 @@ export async function createHallOfFameNomination(data: {
     throw error;
   }
 
-  console.log('Nomination created successfully:', nomination);
   return nomination;
 }
 
@@ -140,4 +137,49 @@ export async function deleteBoardMember(id: string) {
     console.error('Error deleting board member:', error);
     throw error;
   }
+}
+
+export async function createLuncheonRegistration(data: any) {
+  const { data: registration, error } = await supabase
+    .from('luncheon_registrations')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating luncheon registration:', error);
+    throw error;
+  }
+
+  return registration;
+}
+
+export async function createScholarshipApplication(data: any) {
+  const { data: application, error } = await supabase
+    .from('scholarship_applications')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating scholarship application:', error);
+    throw error;
+  }
+
+  return application;
+}
+
+export async function createRegistration(data: any) {
+  const { data: registration, error } = await supabase
+    .from('registrations')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating registration:', error);
+    throw error;
+  }
+
+  return registration;
 }
