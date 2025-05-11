@@ -10,28 +10,30 @@ export default defineConfig({
     port: 4321,
     host: true
   },
+  devToolbar: {
+    enabled: false // Temporarily disable dev toolbar to prevent module loading issues
+  },
   vite: {
     build: {
       target: 'es2022'
     },
     server: {
       hmr: {
-        timeout: 180000  // 3 minutes timeout
+        timeout: 300000  // Increased to 5 minutes for better reliability
       },
       fs: {
         strict: false,
-        allow: ['..', '../..']  // Expanded file system access
+        allow: ['./src', './public'] // Explicit directory allowlist instead of wildcards
       },
       watch: {
-        usePolling: true,  // Enable polling for more reliable file watching
-        interval: 1000     // Check for changes every second
+        usePolling: true,
+        interval: 1000
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      },
-      force: true  // Force dependency optimization
+      }
     }
   }
 });
