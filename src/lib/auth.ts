@@ -59,6 +59,43 @@ export async function authenticateUser(email: string, password: string) {
   }
 }
 
+export async function createUser(email: string, password: string, role: string = 'user') {
+  try {
+    console.log('Creating new user:', { email, role });
+
+    // Create the user in Supabase Auth
+    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: role
+        }
+      }
+    });
+
+    if (signUpError) {
+      console.error('Sign up error:', signUpError);
+      throw signUpError;
+    }
+
+    if (!user) {
+      throw new Error('Failed to create user');
+    }
+
+    console.log('User created successfully:', user);
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: role
+    };
+  } catch (error) {
+    console.error('User creation failed:', error);
+    throw error;
+  }
+}
+
 export async function isAdmin(userId: string) {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
