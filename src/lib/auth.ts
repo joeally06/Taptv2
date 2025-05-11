@@ -1,6 +1,38 @@
 import { supabase } from './supabase';
 import { setSessionCookie, clearSessionCookie } from './session';
 
+export async function createUser(email: string, password: string, role: string = 'user') {
+  try {
+    const { data: { user }, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role
+        }
+      }
+    });
+
+    if (error) {
+      console.error('User creation error:', error);
+      throw error;
+    }
+
+    if (!user) {
+      throw new Error('No user data returned');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role
+    };
+  } catch (error) {
+    console.error('User creation process failed:', error);
+    throw error;
+  }
+}
+
 export async function authenticateUser(email: string, password: string) {
   try {
     console.log('Attempting authentication for:', email);
