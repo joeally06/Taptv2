@@ -52,8 +52,8 @@ if (userCookie?.value) {
 
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
         
-        <!-- Debug info section -->
-        <div id="debug-info" class="mt-4 p-4 bg-gray-100 rounded text-xs font-mono whitespace-pre-wrap"></div>
+        <!-- Debug info section - always visible -->
+        <div id="debug-info" class="mt-4 p-4 bg-gray-100 rounded text-xs font-mono overflow-auto max-h-60"></div>
 
         <div>
           <button
@@ -83,9 +83,11 @@ if (userCookie?.value) {
   function updateDebug(info: any) {
     if (debugInfo) {
       const timestamp = new Date().toISOString();
-      const currentContent = debugInfo.textContent || '';
       const newContent = `[${timestamp}] ${JSON.stringify(info, null, 2)}`;
-      debugInfo.textContent = currentContent ? `${currentContent}\n\n${newContent}` : newContent;
+      debugInfo.innerHTML = debugInfo.innerHTML 
+        ? `${debugInfo.innerHTML}\n\n${newContent}`
+        : newContent;
+      debugInfo.scrollTop = debugInfo.scrollHeight;
     }
   }
 
