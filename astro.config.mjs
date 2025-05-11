@@ -32,6 +32,12 @@ export default defineConfig({
       fs: {
         strict: false,
         allow: ['.']
+      },
+      proxy: {
+        '/.netlify/functions': {
+          target: 'http://localhost:9999',
+          changeOrigin: true
+        }
       }
     },
     ssr: {
