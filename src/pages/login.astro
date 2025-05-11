@@ -51,7 +51,7 @@ if (userCookie?.value) {
         </div>
 
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
-        <div id="debug-info" class="hidden mt-4 p-4 bg-gray-100 rounded text-xs font-mono"></div>
+        <div id="debug-info" class="hidden mt-4 p-4 bg-gray-100 rounded text-xs font-mono whitespace-pre-wrap"></div>
 
         <div>
           <button
@@ -105,7 +105,7 @@ if (userCookie?.value) {
       console.log('Authentication successful:', user);
       showDebug({ status: 'success', user });
 
-      // Store user session in an HTTP-only cookie
+      // Store user session in a cookie
       document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400; secure; samesite=strict`;
       
       // Redirect to admin dashboard
@@ -113,7 +113,11 @@ if (userCookie?.value) {
     } catch (error) {
       console.error('Login error:', error);
       showError('Invalid email or password. Please check your credentials and try again.');
-      showDebug({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' });
+      showDebug({ 
+        status: 'error', 
+        message: error instanceof Error ? error.message : 'Unknown error',
+        error: error
+      });
     }
   });
 </script>
