@@ -19,7 +19,7 @@ export default defineConfig({
     },
     server: {
       hmr: {
-        timeout: 120000
+        timeout: 180000  // Increased to 3 minutes
       },
       fs: {
         strict: false,
