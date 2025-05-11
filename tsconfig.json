@@ -15,7 +15,9 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["astro/client", "node"]
+    "types": ["astro/client", "node"],
+    "jsx": "preserve",
+    "jsxImportSource": "astro/jsx-runtime"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro"],
   "exclude": ["node_modules", "dist"]
