@@ -8,18 +8,17 @@ export const GET: APIRoute = async ({ request }) => {
   };
 
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
-    if (!session) {
+    // Get auth token from cookie
+    const authCookie = request.headers.get('cookie')?.split(';')
+      .find(c => c.trim().startsWith('sb-access-token='));
+    
+    if (!authCookie) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'No active session found',
+          message: 'No authentication cookie found',
           debug: {
+            cookies: request.headers.get('cookie'),
             timestamp: new Date().toISOString()
           }
         }),
@@ -27,10 +26,11 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(session.access_token);
-    
-    if (userError || !user) {
-      throw userError || new Error('No user found');
+    const token = authCookie.split('=')[1].trim();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      throw error || new Error('Invalid authentication token');
     }
 
     const isAdmin = user.user_metadata?.role === 'admin';
@@ -65,4 +65,4 @@ export const GET: APIRoute = async ({ request }) => {
       { status: 500, headers }
     );
   }
-}
+};

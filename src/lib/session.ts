@@ -27,15 +27,16 @@ export async function getSession(): Promise<SessionUser | null> {
 }
 
 export function setSessionCookie(token: string) {
-  document.cookie = `sb-access-token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; secure; samesite=strict`;
+  const secure = window.location.protocol === 'https:';
+  document.cookie = `sb-access-token=${token}; path=/; max-age=${60 * 60 * 24 * 7}${secure ? '; secure' : ''}; samesite=lax`;
 }
 
 export function clearSessionCookie() {
-  document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; samesite=lax';
 }
 
 export function getSessionCookie(): string | null {
   const cookies = document.cookie.split(';');
   const tokenCookie = cookies.find(c => c.trim().startsWith('sb-access-token='));
-  return tokenCookie ? tokenCookie.split('=')[1] : null;
+  return tokenCookie ? tokenCookie.split('=')[1].trim() : null;
 }
