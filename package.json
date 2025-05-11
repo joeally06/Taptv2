@@ -1,24 +1,6 @@
 {
-  "name": "tennessee-pupil-transportation",
-  "type": "module",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
-  },
   "dependencies": {
-    "astro": "^5.2.5",
-    "@astrojs/tailwind": "^5.1.0",
     "@supabase/supabase-js": "^2.39.0",
-    "@libsql/client": "^0.5.6",
-    "tailwindcss": "^3.4.1"
-  },
-  "browserslist": [
-    "defaults",
-    "not IE 11",
-    "maintained node versions"
-  ]
+    "@supabase/postgrest-js": "^1.8.0"
+  }
 }
