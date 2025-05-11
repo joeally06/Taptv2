@@ -20,7 +20,13 @@ export default defineConfig({
       },
       fs: {
         strict: false,
-        allow: ['/'] // Allow access to the entire project root
+        allow: [
+          '/home/project/src/components',
+          '/home/project/src/layouts',
+          '/home/project/src/pages',
+          '/home/project/src',
+          '/'
+        ]
       },
       watch: {
         usePolling: true,  // Enable polling for more reliable file watching
