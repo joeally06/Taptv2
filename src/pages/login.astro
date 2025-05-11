@@ -51,7 +51,9 @@ if (userCookie?.value) {
         </div>
 
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
-        <div id="debug-info" class="hidden mt-4 p-4 bg-gray-100 rounded text-xs font-mono whitespace-pre-wrap"></div>
+        
+        <!-- Debug info section - always visible -->
+        <div id="debug-info" class="mt-4 p-4 bg-gray-100 rounded text-xs font-mono whitespace-pre-wrap"></div>
 
         <div>
           <button
@@ -67,8 +69,6 @@ if (userCookie?.value) {
 </Layout>
 
 <script>
-  import { authenticateUser } from '../lib/auth';
-
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
   const debugInfo = document.getElementById('debug-info');
@@ -80,10 +80,12 @@ if (userCookie?.value) {
     }
   }
 
-  function showDebug(info: any) {
-    if (debugInfo && import.meta.env.DEV) {
-      debugInfo.textContent = JSON.stringify(info, null, 2);
-      debugInfo.classList.remove('hidden');
+  function updateDebug(info: any) {
+    if (debugInfo) {
+      const timestamp = new Date().toISOString();
+      const currentContent = debugInfo.textContent || '';
+      const newContent = `[${timestamp}] ${JSON.stringify(info, null, 2)}`;
+      debugInfo.textContent = currentContent ? `${currentContent}\n\n${newContent}` : newContent;
     }
   }
 
@@ -96,14 +98,14 @@ if (userCookie?.value) {
 
     if (!email || !password) {
       showError('Please fill in all fields');
+      updateDebug({ status: 'error', message: 'Missing required fields' });
       return;
     }
 
     try {
-      console.log('Attempting login with:', { email });
+      updateDebug({ status: 'attempting', email });
       const user = await authenticateUser(email, password);
-      console.log('Authentication successful:', user);
-      showDebug({ status: 'success', user });
+      updateDebug({ status: 'success', user });
 
       // Store user session in a cookie
       document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400; secure; samesite=strict`;
@@ -113,7 +115,7 @@ if (userCookie?.value) {
     } catch (error) {
       console.error('Login error:', error);
       showError('Invalid email or password. Please check your credentials and try again.');
-      showDebug({ 
+      updateDebug({ 
         status: 'error', 
         message: error instanceof Error ? error.message : 'Unknown error',
         error: error
