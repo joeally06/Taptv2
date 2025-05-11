@@ -24,6 +24,8 @@ if (userCookie?.value) {
         </h2>
       </div>
       
+      <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4 text-red-700"></div>
+
       <form id="login-form" class="mt-8 space-y-6">
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
@@ -49,8 +51,6 @@ if (userCookie?.value) {
             />
           </div>
         </div>
-
-        <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
 
         <div>
           <button
@@ -78,8 +78,15 @@ if (userCookie?.value) {
     }
   }
 
+  function hideError() {
+    if (errorMessage) {
+      errorMessage.classList.add('hidden');
+    }
+  }
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    hideError();
     
     try {
       const formData = new FormData(form);
@@ -96,6 +103,7 @@ if (userCookie?.value) {
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY
       );
 
+      // Sign in with email and password
       const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
