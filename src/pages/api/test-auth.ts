@@ -1,35 +1,43 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/db';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
   const headers = {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-store'
   };
 
   try {
-    // First check if there's an active session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Get the session from the request cookies
+    const authCookie = request.headers.get('cookie')?.split(';')
+      .find(c => c.trim().startsWith('sb-access-token='));
     
-    if (sessionError) {
-      throw sessionError;
-    }
-
-    if (!session) {
+    if (!authCookie) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'No active session - user is not authenticated'
+          message: 'No authentication cookie found - user is not authenticated'
         }),
         { status: 401, headers }
       );
     }
 
-    // If we have a session, proceed to get the user
-    const { data: { user }, error } = await supabase.auth.getUser();
+    // Set the auth cookie for the Supabase client
+    const token = authCookie.split('=')[1].trim();
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error) {
       throw error;
+    }
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Invalid authentication token'
+        }),
+        { status: 401, headers }
+      );
     }
 
     return new Response(
