@@ -1,13 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/AdminNav.astro';
-import { createClient } from '@libsql/client';
-import { join } from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const dataDir = join(process.cwd(), 'data');
-const db = createClient({
-  url: `file:${join(dataDir, 'conference.db')}`
-});
+// Create Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Check if user is authenticated and is admin
 const user = Astro.cookies.get('user')?.json();
@@ -17,8 +16,15 @@ if (!user || user.role !== 'admin') {
 }
 
 // Get all users
-const result = await db.execute('SELECT id, email, role, created_at FROM users ORDER BY created_at DESC');
-const users = result.rows;
+const { data: users, error } = await supabase
+  .from('users')
+  .select('id, role, created_at')
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('Error fetching users:', error);
+  return Astro.redirect('/500');
+}
 ---
 
 <Layout title="User Management">
@@ -39,7 +45,7 @@ const users = result.rows;
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -48,7 +54,7 @@ const users = result.rows;
         <tbody class="bg-white divide-y divide-gray-200">
           {users.map(user => (
             <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.id}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.role}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {new Date(user.created_at).toLocaleDateString()}
@@ -85,26 +91,6 @@ const users = result.rows;
         <input type="hidden" name="userId" />
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input
-            type="password"
-            name="password"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-          <p class="text-xs text-gray-500 mt-1">Leave blank to keep existing password</p>
-        </div>
-        
-        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
           <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
             <option value="user">User</option>
@@ -133,8 +119,6 @@ const users = result.rows;
 </Layout>
 
 <script>
-  import { createUser } from '../../lib/auth';
-
   const modal = document.getElementById('user-modal');
   const form = document.getElementById('user-form') as HTMLFormElement;
   const modalTitle = document.getElementById('modal-title');
@@ -174,20 +158,23 @@ const users = result.rows;
     
     const formData = new FormData(form);
     const userId = formData.get('userId')?.toString();
-    const email = formData.get('email')?.toString();
-    const password = formData.get('password')?.toString();
     const role = formData.get('role')?.toString();
 
-    if (!email || !role) return;
+    if (!role) return;
 
     try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
       if (userId) {
         // Update existing user
-        // TODO: Implement user update
-      } else {
-        // Create new user
-        if (!password) return;
-        await createUser(email, password, role);
+        const { error } = await supabase
+          .from('users')
+          .update({ role })
+          .eq('id', userId);
+
+        if (error) throw error;
       }
 
       hideModal();
@@ -205,11 +192,9 @@ const users = result.rows;
       
       if (form) {
         const userIdInput = form.querySelector('[name="userId"]') as HTMLInputElement;
-        const emailInput = form.querySelector('[name="email"]') as HTMLInputElement;
         const roleInput = form.querySelector('[name="role"]') as HTMLSelectElement;
 
         if (userIdInput) userIdInput.value = userData.id;
-        if (emailInput) emailInput.value = userData.email;
         if (roleInput) roleInput.value = userData.role;
 
         showModal('Edit User');
@@ -225,7 +210,17 @@ const users = result.rows;
 
       if (confirm('Are you sure you want to delete this user?')) {
         try {
-          // TODO: Implement user deletion
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const supabase = createClient(supabaseUrl, supabaseKey);
+
+          const { error } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+          if (error) throw error;
+          
           window.location.reload();
         } catch (error) {
           console.error('Error deleting user:', error);
