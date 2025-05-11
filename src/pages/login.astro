@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { authenticateUser } from '../lib/auth';
 
 // Debug: Log if user is already authenticated
 const userCookie = Astro.cookies.get('user');
@@ -86,6 +87,67 @@ if (userCookie?.value) {
       const currentContent = debugInfo.textContent || '';
       const newContent = `[${timestamp}] ${JSON.stringify(info, null, 2)}`;
       debugInfo.textContent = currentContent ? `${currentContent}\n\n${newContent}` : newContent;
+    }
+  }
+
+  async function authenticateUser(email: string, password: string) {
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    const supabase = createClient(
+      import.meta.env.PUBLIC_SUPABASE_URL,
+      import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    try {
+      updateDebug({ status: 'authenticating', email });
+      
+      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        updateDebug({ status: 'error', error: signInError });
+        throw signInError;
+      }
+
+      if (!session?.user) {
+        updateDebug({ status: 'error', message: 'No session or user data' });
+        throw new Error('Authentication failed');
+      }
+
+      updateDebug({ status: 'session_created', session });
+
+      // Get user metadata to check role
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        updateDebug({ status: 'error', error: userError });
+        throw userError || new Error('Failed to get user data');
+      }
+
+      updateDebug({ status: 'user_data_retrieved', metadata: user.user_metadata });
+
+      // Check if user has admin role in metadata
+      const isAdmin = user.user_metadata?.role === 'admin';
+      if (!isAdmin) {
+        updateDebug({ status: 'error', message: 'Not admin', metadata: user.user_metadata });
+        throw new Error('Access denied: User is not an admin');
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        role: 'admin',
+        session: session.access_token
+      };
+    } catch (error) {
+      updateDebug({ status: 'error', message: error.message });
+      throw error;
     }
   }
 
