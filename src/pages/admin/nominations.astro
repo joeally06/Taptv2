@@ -1,0 +1,177 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/AdminNav.astro';
+import { getHallOfFameNominations } from '../../lib/db';
+
+// Verify admin access
+const userCookie = Astro.cookies.get('user');
+let user = null;
+try {
+  user = userCookie ? JSON.parse(userCookie.value) : null;
+} catch (error) {
+  console.error('Error parsing user cookie:', error);
+}
+
+if (!user || user.role !== 'admin') {
+  return Astro.redirect('/login');
+}
+
+// Fetch nominations
+const nominations = await getHallOfFameNominations();
+---
+
+<Layout title="Hall of Fame Nominations">
+  <AdminNav currentPath="/admin/nominations" />
+  
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-2xl font-bold text-gray-900">Hall of Fame Nominations</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nominee</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">District</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nominator</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {nominations.map(nomination => (
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{nomination.nominee_name}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-500">{nomination.district}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm text-gray-900">{nomination.nominator_name}</div>
+                  <div class="text-sm text-gray-500">{nomination.nominator_email}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-500">
+                    {new Date(nomination.created_at).toLocaleDateString()}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    class="text-primary-600 hover:text-primary-900"
+                    data-action="view"
+                    data-nomination={JSON.stringify(nomination)}
+                  >
+                    View Details
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nomination Details Modal -->
+  <div id="nomination-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-8 max-w-2xl w-full">
+      <div class="flex justify-between items-start mb-6">
+        <h2 class="text-xl font-bold">Nomination Details</h2>
+        <button id="close-modal" class="text-gray-400 hover:text-gray-500">
+          <span class="sr-only">Close</span>
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Nominee</h3>
+          <p id="nominee-name" class="mt-1 text-lg text-gray-900"></p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">School District</h3>
+          <p id="district" class="mt-1 text-gray-900"></p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Nominated By</h3>
+          <p id="nominator-name" class="mt-1 text-gray-900"></p>
+          <p id="nominator-email" class="text-gray-600"></p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Nomination Reason</h3>
+          <p id="nomination-reason" class="mt-1 text-gray-900 whitespace-pre-wrap"></p>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Submission Date</h3>
+          <p id="submission-date" class="mt-1 text-gray-900"></p>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end">
+        <button
+          type="button"
+          class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          onclick="document.getElementById('nomination-modal').classList.add('hidden')"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const modal = document.getElementById('nomination-modal');
+  const closeBtn = document.getElementById('close-modal');
+
+  function showNominationDetails(nomination: any) {
+    if (modal) {
+      // Update modal content
+      const elements = {
+        'nominee-name': nomination.nominee_name,
+        'district': nomination.district,
+        'nominator-name': nomination.nominator_name,
+        'nominator-email': nomination.nominator_email,
+        'nomination-reason': nomination.nomination_reason,
+        'submission-date': new Date(nomination.created_at).toLocaleDateString()
+      };
+
+      Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.textContent = value as string;
+        }
+      });
+
+      modal.classList.remove('hidden');
+    }
+  }
+
+  // Handle view button clicks
+  document.querySelectorAll('[data-action="view"]').forEach(button => {
+    button.addEventListener('click', () => {
+      const nominationData = JSON.parse((button as HTMLElement).dataset.nomination || '{}');
+      showNominationDetails(nominationData);
+    });
+  });
+
+  // Close modal when clicking close button or outside
+  closeBtn?.addEventListener('click', () => {
+    modal?.classList.add('hidden');
+  });
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+    }
+  });
+</script>
