@@ -11,10 +11,14 @@ const supabase = createClient(
 
 export async function registerUser(email: string, password: string) {
   try {
-    // First create the auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          role: 'user' // Set the role in the user metadata
+        }
+      }
     });
 
     if (authError) {
@@ -24,24 +28,6 @@ export async function registerUser(email: string, password: string) {
 
     if (!authData.user) {
       throw new Error('Failed to create user');
-    }
-
-    // Then create the user record in our users table
-    const { error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: authData.user.id,
-          email: authData.user.email,
-          role: 'user', // Default role
-        }
-      ]);
-
-    if (userError) {
-      console.error('Error creating user record:', userError);
-      // If user record creation fails, we should clean up the auth user
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new Error('Failed to create user record');
     }
 
     return {
@@ -63,33 +49,21 @@ export async function authenticateUser(email: string, password: string) {
     });
 
     if (error) {
-      if (error.message === 'Invalid login credentials') {
-        throw new Error('Invalid email or password. Please check your credentials and try again.');
-      }
       console.error('Authentication error:', error);
-      throw new Error(error.message);
+      throw new Error('Invalid email or password. Please check your credentials and try again.');
     }
 
     if (!data.user) {
       throw new Error('No user data returned');
     }
 
-    // Get user role from the users table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
-
-    if (userError) {
-      console.error('Error fetching user role:', userError);
-      throw new Error('Failed to fetch user data');
-    }
+    // Get the role from user metadata
+    const role = data.user.user_metadata?.role || 'user';
 
     return {
       id: data.user.id,
       email: data.user.email,
-      role: userData.role
+      role: role
     };
   } catch (error) {
     console.error('Authentication error:', error);
@@ -99,18 +73,14 @@ export async function authenticateUser(email: string, password: string) {
 
 export async function isAdmin(userId: string) {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .single();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (error) {
+    if (error || !user) {
       console.error('Error checking admin status:', error);
       return false;
     }
 
-    return data?.role === 'admin';
+    return user.user_metadata?.role === 'admin';
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
