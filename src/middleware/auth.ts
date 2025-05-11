@@ -20,10 +20,11 @@ const PUBLIC_PATHS = [
 
 export const authMiddleware: MiddlewareResponseHandler = async ({ request, locals }) => {
   const url = new URL(request.url);
-
-  // Skip auth for public paths
-  if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path))) {
-    return;
+  
+  // Skip auth for public paths and static assets
+  if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path)) || 
+      url.pathname.match(/\.(jpg|jpeg|png|gif|svg|css|js)$/)) {
+    return undefined;
   }
 
   // Get auth token from cookie
@@ -31,7 +32,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
     .find(c => c.trim().startsWith('sb-access-token='));
 
   if (!authCookie) {
-    return Response.redirect(new URL('/login', request.url), 302);
+    return Response.redirect(new URL('/login', request.url));
   }
 
   const token = authCookie.split('=')[1].trim();
@@ -40,14 +41,14 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return Response.redirect(new URL('/login', request.url), 302);
+      return Response.redirect(new URL('/login', request.url));
     }
 
     // Check admin access for admin routes
     if (url.pathname.startsWith('/admin')) {
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        return Response.redirect(new URL('/', request.url), 302);
+        return Response.redirect(new URL('/', request.url));
       }
     }
 
@@ -58,8 +59,11 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, local
       role: user.user_metadata?.role || 'user'
     };
 
+    // Continue processing the request
+    return undefined;
+
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return Response.redirect(new URL('/login', request.url), 302);
+    return Response.redirect(new URL('/login', request.url));
   }
 };
