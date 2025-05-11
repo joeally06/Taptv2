@@ -1,5 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// Debug: Log if user is already authenticated
+const userCookie = Astro.cookies.get('user');
+console.log('Existing user cookie:', userCookie?.value);
+
+// If user is already logged in, redirect to admin
+if (userCookie?.value) {
+  const user = JSON.parse(userCookie.value);
+  console.log('User already logged in:', user);
+  if (user.role === 'admin') {
+    return Astro.redirect('/admin');
+  }
+}
 ---
 
 <Layout title="Login">
@@ -9,16 +22,6 @@ import Layout from '../layouts/Layout.astro';
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Or
-          <button
-            type="button"
-            id="show-register"
-            class="font-medium text-primary-600 hover:text-primary-500"
-          >
-            create a new account
-          </button>
-        </p>
       </div>
       
       <form id="login-form" class="mt-8 space-y-6">
@@ -47,20 +50,8 @@ import Layout from '../layouts/Layout.astro';
           </div>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="text-sm">
-            <button
-              type="button"
-              id="forgot-password"
-              class="font-medium text-primary-600 hover:text-primary-500"
-            >
-              Forgot your password?
-            </button>
-          </div>
-        </div>
-
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
-        <div id="success-message" class="hidden text-green-600 text-sm text-center"></div>
+        <div id="debug-info" class="hidden mt-4 p-4 bg-gray-100 rounded text-xs font-mono"></div>
 
         <div>
           <button
@@ -71,233 +62,33 @@ import Layout from '../layouts/Layout.astro';
           </button>
         </div>
       </form>
-
-      <!-- Registration Modal -->
-      <div id="register-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Create an Account</h3>
-          <form id="register-form" class="space-y-4">
-            <div>
-              <label for="register-email" class="block text-sm font-medium text-gray-700">Email address</label>
-              <input
-                type="email"
-                id="register-email"
-                name="email"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div>
-              <label for="register-password" class="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
-                id="register-password"
-                name="password"
-                required
-                minlength="6"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-              <p class="mt-1 text-sm text-gray-500">Password must be at least 6 characters long</p>
-            </div>
-            <div>
-              <label for="register-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-              <input
-                type="password"
-                id="register-confirm-password"
-                name="confirm-password"
-                required
-                minlength="6"
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div class="flex justify-end space-x-3">
-              <button
-                type="button"
-                class="close-modal px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
-              >
-                Register
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Forgot Password Modal -->
-      <div id="forgot-password-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Reset Password</h3>
-          <p class="text-sm text-gray-500 mb-4">Enter your email address and we'll send you a link to reset your password.</p>
-          <form id="reset-password-form" class="space-y-4">
-            <div>
-              <label for="reset-email" class="block text-sm font-medium text-gray-700">Email address</label>
-              <input
-                type="email"
-                id="reset-email"
-                name="email"
-                required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div class="flex justify-end space-x-3">
-              <button
-                type="button"
-                class="close-modal px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
-              >
-                Send Reset Link
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
   </div>
 </Layout>
 
 <script>
-  import { authenticateUser, resetPassword, registerUser } from '../lib/auth';
+  import { authenticateUser } from '../lib/auth';
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
-  const successMessage = document.getElementById('success-message');
-  const forgotPasswordModal = document.getElementById('forgot-password-modal');
-  const registerModal = document.getElementById('register-modal');
-  const resetForm = document.getElementById('reset-password-form') as HTMLFormElement;
-  const registerForm = document.getElementById('register-form') as HTMLFormElement;
+  const debugInfo = document.getElementById('debug-info');
 
   function showError(message: string) {
     if (errorMessage) {
       errorMessage.textContent = message;
       errorMessage.classList.remove('hidden');
-      successMessage?.classList.add('hidden');
     }
   }
 
-  function showSuccess(message: string) {
-    if (successMessage) {
-      successMessage.textContent = message;
-      successMessage.classList.remove('hidden');
-      errorMessage?.classList.add('hidden');
+  function showDebug(info: any) {
+    if (debugInfo && import.meta.env.DEV) {
+      debugInfo.textContent = JSON.stringify(info, null, 2);
+      debugInfo.classList.remove('hidden');
     }
   }
 
-  function hideMessages() {
-    errorMessage?.classList.add('hidden');
-    successMessage?.classList.add('hidden');
-  }
-
-  // Modal controls
-  document.getElementById('show-register')?.addEventListener('click', () => {
-    registerModal?.classList.remove('hidden');
-  });
-
-  document.getElementById('forgot-password')?.addEventListener('click', () => {
-    forgotPasswordModal?.classList.remove('hidden');
-  });
-
-  document.querySelectorAll('.close-modal').forEach(button => {
-    button.addEventListener('click', () => {
-      forgotPasswordModal?.classList.add('hidden');
-      registerModal?.classList.add('hidden');
-      resetForm?.reset();
-      registerForm?.reset();
-      hideMessages();
-    });
-  });
-
-  // Close modals when clicking outside
-  [forgotPasswordModal, registerModal].forEach(modal => {
-    modal?.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.add('hidden');
-        resetForm?.reset();
-        registerForm?.reset();
-        hideMessages();
-      }
-    });
-  });
-
-  // Handle registration
-  registerForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideMessages();
-
-    const formData = new FormData(registerForm);
-    const email = formData.get('email')?.toString();
-    const password = formData.get('password')?.toString();
-    const confirmPassword = formData.get('confirm-password')?.toString();
-
-    if (!email || !password || !confirmPassword) {
-      showError('Please fill in all fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      showError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters long');
-      return;
-    }
-
-    try {
-      await registerUser(email, password);
-      showSuccess('Registration successful! You can now log in with your new account.');
-      registerModal?.classList.add('hidden');
-      registerForm.reset();
-    } catch (error) {
-      console.error('Registration error:', error);
-      if (error instanceof Error && error.message.includes('already registered')) {
-        showError('This email is already registered. Please try logging in instead.');
-      } else {
-        showError(error instanceof Error ? error.message : 'Failed to register. Please try again.');
-      }
-    }
-  });
-
-  // Handle password reset
-  resetForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideMessages();
-
-    const formData = new FormData(resetForm);
-    const email = formData.get('email')?.toString();
-
-    if (!email) {
-      showError('Please enter your email address');
-      return;
-    }
-
-    try {
-      await resetPassword(email);
-      showSuccess('If an account exists with this email, you will receive a password reset link shortly.');
-      forgotPasswordModal?.classList.add('hidden');
-      resetForm.reset();
-    } catch (error) {
-      // Don't show specific errors for password reset to prevent email enumeration
-      showSuccess('If an account exists with this email, you will receive a password reset link shortly.');
-      forgotPasswordModal?.classList.add('hidden');
-      resetForm.reset();
-    }
-  });
-
-  // Handle login
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    hideMessages();
     
     const formData = new FormData(form);
     const email = formData.get('email')?.toString();
@@ -309,16 +100,24 @@ import Layout from '../layouts/Layout.astro';
     }
 
     try {
+      console.log('Attempting login with:', { email });
       const user = await authenticateUser(email, password);
-      
-      // Store user session in cookies
+      console.log('Authentication successful:', user);
+      showDebug({ status: 'success', user });
+
+      // Store user session
       document.cookie = `user=${JSON.stringify(user)}; path=/; max-age=86400; secure; samesite=strict`;
       
-      // Redirect to admin dashboard
-      window.location.href = '/admin';
+      // Redirect based on role
+      if (user.role === 'admin') {
+        window.location.href = '/admin';
+      } else {
+        showError('Access denied. Admin privileges required.');
+      }
     } catch (error) {
       console.error('Login error:', error);
       showError('Invalid email or password. Please check your credentials and try again.');
+      showDebug({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 </script>
