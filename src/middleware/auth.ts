@@ -12,14 +12,13 @@ const PUBLIC_PATHS = [
   '/api/test-db'
 ];
 
-export const authMiddleware: MiddlewareResponseHandler = async (context) => {
-  const { request, locals } = context;
+export const authMiddleware: MiddlewareResponseHandler = async ({ request, locals }) => {
   const url = new URL(request.url);
 
   // Skip auth for public paths
   if (PUBLIC_PATHS.some(path => url.pathname.startsWith(path))) {
     locals.skipAuth = true;
-    return await context.next();
+    return;
   }
 
   // Get auth token from cookie
@@ -27,7 +26,10 @@ export const authMiddleware: MiddlewareResponseHandler = async (context) => {
     .find(c => c.trim().startsWith('sb-access-token='));
 
   if (!authCookie) {
-    return Response.redirect(new URL('/login', request.url), 302);
+    return new Response(null, {
+      status: 302,
+      headers: { Location: '/login' }
+    });
   }
 
   const token = authCookie.split('=')[1].trim();
@@ -36,14 +38,20 @@ export const authMiddleware: MiddlewareResponseHandler = async (context) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return Response.redirect(new URL('/login', request.url), 302);
+      return new Response(null, {
+        status: 302,
+        headers: { Location: '/login' }
+      });
     }
 
     // Check admin access for admin routes
     if (url.pathname.startsWith('/admin')) {
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        return Response.redirect(new URL('/', request.url), 302);
+        return new Response(null, {
+          status: 302,
+          headers: { Location: '/' }
+        });
       }
     }
 
@@ -54,10 +62,11 @@ export const authMiddleware: MiddlewareResponseHandler = async (context) => {
       role: user.user_metadata?.role || 'user'
     };
 
-    // Continue to the next middleware/route
-    return await context.next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return Response.redirect(new URL('/login', request.url), 302);
+    return new Response(null, {
+      status: 302,
+      headers: { Location: '/login' }
+    });
   }
 };
