@@ -21,14 +21,15 @@ export default defineConfig({
       fs: {
         strict: false,
         allow: [
-          '.',            // Allow current directory
-          '..',           // Allow parent directory
-          '../..',        // Allow grandparent directory
-          './src',        // Explicitly allow src directory
-          './public',     // Explicitly allow public directory
-          './components', // Explicitly allow components directory
-          './layouts',    // Explicitly allow layouts directory
-          './lib'         // Explicitly allow lib directory
+          '.',                   // Allow current directory
+          '..',                  // Allow parent directory
+          '../..',               // Allow grandparent directory
+          './src',               // Explicitly allow src directory
+          './src/components',    // Explicitly allow components directory
+          './src/layouts',       // Explicitly allow layouts directory
+          './src/pages',         // Explicitly allow pages directory
+          './src/lib',           // Explicitly allow lib directory
+          './public'             // Explicitly allow public directory
         ]
       },
       watch: {
@@ -40,15 +41,7 @@ export default defineConfig({
       esbuildOptions: {
         target: 'es2022'
       },
-      force: true,     // Force dependency optimization
-      entries: [       // Explicitly specify entry points
-        './src/**/*.astro',
-        './src/**/*.ts',
-        './src/components/**/*.astro',
-        './src/layouts/**/*.astro',
-        './src/pages/**/*.astro',
-        './src/lib/**/*.ts'
-      ]
+      force: true     // Force dependency optimization
     }
   }
 });
