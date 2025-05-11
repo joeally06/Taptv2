@@ -24,12 +24,9 @@ export default defineConfig({
           '.',                   // Allow current directory
           '..',                  // Allow parent directory
           '../..',               // Allow grandparent directory
-          './src',               // Explicitly allow src directory
-          './src/components',    // Explicitly allow components directory
-          './src/layouts',       // Explicitly allow layouts directory
-          './src/pages',         // Explicitly allow pages directory
-          './src/lib',           // Explicitly allow lib directory
-          './public'             // Explicitly allow public directory
+          './src/**',           // Allow all files under src
+          './public/**',        // Allow all files under public
+          './node_modules/**'   // Allow all files under node_modules
         ]
       },
       watch: {
