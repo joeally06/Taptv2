@@ -1,19 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      storageKey: 'sb-access-token'
-    }
-  }
-);
+import { supabase } from './supabase';
 
 export async function authenticateUser(email: string, password: string) {
   try {
@@ -36,7 +21,6 @@ export async function authenticateUser(email: string, password: string) {
 
     console.log('Session established:', session);
 
-    // Get user metadata to check role
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
@@ -46,14 +30,12 @@ export async function authenticateUser(email: string, password: string) {
 
     console.log('User metadata:', user.user_metadata);
 
-    // Check if user has admin role in metadata
     const isAdmin = user.user_metadata?.role === 'admin';
     if (!isAdmin) {
       console.error('User is not an admin:', user.user_metadata);
       throw new Error('Access denied: User is not an admin');
     }
 
-    // Store the session token
     document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
 
     return {

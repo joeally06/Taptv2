@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables. Please connect to Supabase first.');
-}
-
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from './supabase';
 
 export async function createHallOfFameNomination(data: {
   nominee_name: string;
@@ -77,7 +68,6 @@ export async function getHallOfFameNominations() {
   return data;
 }
 
-// Admin functions
 export async function updateConference(id: string, data: any) {
   const { data: conference, error } = await supabase
     .from('conferences')
