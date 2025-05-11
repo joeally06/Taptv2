@@ -51,9 +51,6 @@ if (userCookie?.value) {
         </div>
 
         <div id="error-message" class="hidden text-red-600 text-sm text-center"></div>
-        
-        <!-- Debug info section - always visible -->
-        <div id="debug-info" class="mt-4 p-4 bg-gray-100 rounded text-xs font-mono overflow-auto max-h-60"></div>
 
         <div>
           <button
@@ -63,6 +60,15 @@ if (userCookie?.value) {
             Sign in
           </button>
         </div>
+
+        <!-- Debug info section -->
+        <div id="debug-info" class="mt-4 p-4 bg-gray-800 text-green-400 rounded font-mono text-xs overflow-y-auto max-h-96 fixed bottom-4 right-4 w-96 shadow-lg opacity-90">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold">Debug Log</span>
+            <button id="clear-debug" class="text-gray-400 hover:text-white">[Clear]</button>
+          </div>
+          <div id="debug-content" class="whitespace-pre-wrap"></div>
+        </div>
       </form>
     </div>
   </div>
@@ -71,7 +77,8 @@ if (userCookie?.value) {
 <script>
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
-  const debugInfo = document.getElementById('debug-info');
+  const debugContent = document.getElementById('debug-content');
+  const clearDebugBtn = document.getElementById('clear-debug');
 
   function showError(message: string) {
     if (errorMessage) {
@@ -81,15 +88,22 @@ if (userCookie?.value) {
   }
 
   function updateDebug(info: any) {
-    if (debugInfo) {
+    if (debugContent) {
       const timestamp = new Date().toISOString();
       const newContent = `[${timestamp}] ${JSON.stringify(info, null, 2)}`;
-      debugInfo.innerHTML = debugInfo.innerHTML 
-        ? `${debugInfo.innerHTML}\n\n${newContent}`
+      debugContent.innerHTML = debugContent.innerHTML 
+        ? `${debugContent.innerHTML}\n\n${newContent}`
         : newContent;
-      debugInfo.scrollTop = debugInfo.scrollHeight;
+      debugContent.scrollTop = debugContent.scrollHeight;
     }
   }
+
+  clearDebugBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (debugContent) {
+      debugContent.innerHTML = '';
+    }
+  });
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
