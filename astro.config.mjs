@@ -1,22 +1,29 @@
+// @ts-check
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 
+// https://astro.build/config
 export default defineConfig({
   output: 'server',
   integrations: [tailwind()],
+  devToolbar: {
+    enabled: false  // Temporarily disable dev toolbar to work around fetch error
+  },
   vite: {
-    optimizeDeps: {
-      exclude: ['@supabase/supabase-js']
-    },
     build: {
-      target: 'esnext',
-      rollupOptions: {
-        external: ['@supabase/supabase-js']
-      }
+      target: 'es2022'
     },
     server: {
-      watch: {
-        ignored: ['**/node_modules/**', '**/.git/**']
+      hmr: {
+        timeout: 120000
+      },
+      fs: {
+        allow: ['.']
+      }
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2022'
       }
     }
   }

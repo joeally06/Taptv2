@@ -20,8 +20,5 @@
     "defaults",
     "not IE 11",
     "maintained node versions"
-  ],
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  ]
 }
