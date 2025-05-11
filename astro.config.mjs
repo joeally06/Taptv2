@@ -20,14 +20,7 @@ export default defineConfig({
       },
       fs: {
         strict: false,
-        allow: [
-          '.',                   // Allow current directory
-          '..',                  // Allow parent directory
-          '../..',               // Allow grandparent directory
-          './src/**',           // Allow all files under src
-          './public/**',        // Allow all files under public
-          './node_modules/**'   // Allow all files under node_modules
-        ]
+        allow: ['/'] // Allow access to the entire project root
       },
       watch: {
         usePolling: true,  // Enable polling for more reliable file watching
