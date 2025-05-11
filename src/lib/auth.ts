@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { setSessionCookie, clearSessionCookie } from './session';
 
 export async function authenticateUser(email: string, password: string) {
   try {
@@ -36,7 +37,7 @@ export async function authenticateUser(email: string, password: string) {
       throw new Error('Access denied: User is not an admin');
     }
 
-    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+    setSessionCookie(session.access_token);
 
     return {
       id: user.id,
@@ -53,7 +54,7 @@ export async function authenticateUser(email: string, password: string) {
 export async function signOut() {
   try {
     await supabase.auth.signOut();
-    document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    clearSessionCookie();
     return true;
   } catch (error) {
     console.error('Sign out error:', error);
