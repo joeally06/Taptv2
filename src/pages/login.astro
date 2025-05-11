@@ -61,18 +61,6 @@ if (userCookie?.value) {
           </button>
         </div>
       </form>
-
-      <!-- Debug info section -->
-      <div id="debug-info" class="fixed bottom-4 right-4 w-96 bg-gray-900 text-green-400 rounded-lg shadow-lg overflow-hidden z-50 cursor-move">
-        <div class="flex justify-between items-center p-2 bg-gray-800 border-b border-gray-700" id="debug-header">
-          <span class="font-mono font-bold">Debug Log</span>
-          <div class="space-x-2">
-            <button id="minimize-debug" class="text-gray-400 hover:text-white px-2">[_]</button>
-            <button id="clear-debug" class="text-gray-400 hover:text-white px-2">[×]</button>
-          </div>
-        </div>
-        <div id="debug-content" class="font-mono text-xs p-4 overflow-y-auto" style="max-height: 60vh; resize: both;"></div>
-      </div>
     </div>
   </div>
 </Layout>
@@ -82,120 +70,12 @@ if (userCookie?.value) {
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
-  const debugInfo = document.getElementById('debug-info') as HTMLElement;
-  const debugContent = document.getElementById('debug-content') as HTMLElement;
-  const debugHeader = document.getElementById('debug-header') as HTMLElement;
-  const clearDebugBtn = document.getElementById('clear-debug');
-  const minimizeDebugBtn = document.getElementById('minimize-debug');
-  let isMinimized = false;
-
-  // Initialize debug log from localStorage
-  if (debugContent && localStorage.getItem('debugLog')) {
-    debugContent.innerHTML = localStorage.getItem('debugLog') || '';
-    debugContent.scrollTop = debugContent.scrollHeight;
-  }
-
-  // Initialize debug window position from localStorage
-  if (debugInfo) {
-    const position = localStorage.getItem('debugPosition');
-    if (position) {
-      const { x, y } = JSON.parse(position);
-      debugInfo.style.transform = `translate(${x}px, ${y}px)`;
-    }
-  }
-
-  // Make debug window draggable
-  let isDragging = false;
-  let currentX: number;
-  let currentY: number;
-  let initialX: number;
-  let initialY: number;
-  let xOffset = 0;
-  let yOffset = 0;
-
-  debugHeader?.addEventListener('mousedown', dragStart);
-  document.addEventListener('mousemove', drag);
-  document.addEventListener('mouseup', dragEnd);
-
-  function dragStart(e: MouseEvent) {
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-
-    if (e.target === debugHeader) {
-      isDragging = true;
-    }
-  }
-
-  function drag(e: MouseEvent) {
-    if (isDragging) {
-      e.preventDefault();
-      currentX = e.clientX - initialX;
-      currentY = e.clientY - initialY;
-      xOffset = currentX;
-      yOffset = currentY;
-
-      if (debugInfo) {
-        debugInfo.style.transform = `translate(${currentX}px, ${currentY}px)`;
-        // Save position to localStorage
-        localStorage.setItem('debugPosition', JSON.stringify({ x: currentX, y: currentY }));
-      }
-    }
-  }
-
-  function dragEnd() {
-    initialX = currentX;
-    initialY = currentY;
-    isDragging = false;
-  }
 
   function showError(message: string) {
     if (errorMessage) {
       errorMessage.textContent = message;
       errorMessage.classList.remove('hidden');
     }
-  }
-
-  function updateDebug(info: any) {
-    if (debugContent) {
-      const timestamp = new Date().toISOString();
-      const newContent = `[${timestamp}] ${JSON.stringify(info, null, 2)}`;
-      debugContent.innerHTML = debugContent.innerHTML 
-        ? `${debugContent.innerHTML}\n\n${newContent}`
-        : newContent;
-      debugContent.scrollTop = debugContent.scrollHeight;
-      
-      // Save to localStorage
-      localStorage.setItem('debugLog', debugContent.innerHTML);
-    }
-  }
-
-  clearDebugBtn?.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (debugContent) {
-      debugContent.innerHTML = '';
-      localStorage.removeItem('debugLog');
-    }
-  });
-
-  minimizeDebugBtn?.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (debugContent && debugInfo) {
-      isMinimized = !isMinimized;
-      if (isMinimized) {
-        debugContent.style.display = 'none';
-        minimizeDebugBtn.textContent = '[+]';
-      } else {
-        debugContent.style.display = 'block';
-        minimizeDebugBtn.textContent = '[_]';
-      }
-      // Save state to localStorage
-      localStorage.setItem('debugMinimized', isMinimized.toString());
-    }
-  });
-
-  // Restore minimized state
-  if (localStorage.getItem('debugMinimized') === 'true') {
-    minimizeDebugBtn?.click();
   }
 
   form?.addEventListener('submit', async (e) => {
@@ -207,13 +87,10 @@ if (userCookie?.value) {
 
     if (!email || !password) {
       showError('Please fill in all fields');
-      updateDebug({ status: 'error', message: 'Missing required fields' });
       return;
     }
 
     try {
-      updateDebug({ status: 'attempting', email });
-
       if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
         throw new Error('Missing Supabase environment variables');
       }
@@ -230,31 +107,23 @@ if (userCookie?.value) {
       });
 
       if (signInError) {
-        updateDebug({ status: 'error', error: signInError });
         throw signInError;
       }
 
       if (!session?.user) {
-        updateDebug({ status: 'error', message: 'No session or user data' });
         throw new Error('Authentication failed');
       }
-
-      updateDebug({ status: 'session_created', session });
 
       // Get user metadata to check role
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        updateDebug({ status: 'error', error: userError });
         throw userError || new Error('Failed to get user data');
       }
-
-      updateDebug({ status: 'user_data_retrieved', metadata: user.user_metadata });
 
       // Check if user has admin role in metadata
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        updateDebug({ status: 'error', message: 'Not admin', metadata: user.user_metadata });
         throw new Error('Access denied: User is not an admin');
       }
 
@@ -265,21 +134,14 @@ if (userCookie?.value) {
         session: session.access_token
       };
 
-      updateDebug({ status: 'success', user: userData });
-
-      // Store user session in cookies
-      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Strict`;
+      // Store user session in cookies with proper attributes
+      document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Lax`;
       
-      // Force reload to trigger server-side redirect
+      // Redirect to admin dashboard
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
-      showError('Invalid email or password. Please check your credentials and try again.');
-      updateDebug({ 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Unknown error',
-        error: error
-      });
+      showError('Invalid email or password');
     }
   });
 </script>
