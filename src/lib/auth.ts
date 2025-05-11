@@ -9,61 +9,39 @@ const supabase = createClient(
   import.meta.env.PUBLIC_SUPABASE_ANON_KEY
 );
 
-export async function registerUser(email: string, password: string) {
-  try {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: 'user' // Set the role in the user metadata
-        }
-      }
-    });
-
-    if (authError) {
-      console.error('Registration error:', authError);
-      throw new Error(authError.message);
-    }
-
-    if (!authData.user) {
-      throw new Error('Failed to create user');
-    }
-
-    return {
-      id: authData.user.id,
-      email: authData.user.email,
-      role: 'user'
-    };
-  } catch (error) {
-    console.error('Registration error:', error);
-    throw error;
-  }
-}
-
 export async function authenticateUser(email: string, password: string) {
   try {
+    console.log('Attempting authentication for:', email);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
-      console.error('Authentication error:', error);
-      throw new Error('Invalid email or password. Please check your credentials and try again.');
+      console.error('Supabase auth error:', error);
+      throw error;
     }
 
     if (!data.user) {
-      throw new Error('No user data returned');
+      console.error('No user data returned');
+      throw new Error('Authentication failed');
     }
 
-    // Get the role from user metadata
-    const role = data.user.user_metadata?.role || 'user';
+    console.log('Authentication successful:', data.user);
+
+    // Get user metadata including role
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !currentUser) {
+      console.error('Error getting user data:', userError);
+      throw new Error('Failed to get user data');
+    }
 
     return {
-      id: data.user.id,
-      email: data.user.email,
-      role: role
+      id: currentUser.id,
+      email: currentUser.email,
+      role: currentUser.user_metadata?.role || 'user'
     };
   } catch (error) {
     console.error('Authentication error:', error);
@@ -84,23 +62,5 @@ export async function isAdmin(userId: string) {
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
-  }
-}
-
-export async function resetPassword(email: string) {
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
-
-    if (error) {
-      console.error('Reset password error:', error);
-      throw new Error('Failed to send password reset email');
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Reset password error:', error);
-    throw error;
   }
 }
