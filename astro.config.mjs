@@ -11,7 +11,7 @@ export default defineConfig({
     host: true
   },
   devToolbar: {
-    enabled: true // Dev toolbar remains enabled
+    enabled: true
   },
   vite: {
     build: {
@@ -19,11 +19,12 @@ export default defineConfig({
     },
     server: {
       hmr: {
-        timeout: 300000  // 5 minutes for better reliability
+        timeout: 300000
       },
       fs: {
         strict: false,
-        allow: ['./src', './public', './node_modules'] // Added node_modules to allow list
+        // Ensure node_modules is explicitly allowed and at the root of the allow list
+        allow: ['node_modules', '.', './src', './public']
       },
       watch: {
         usePolling: true,
