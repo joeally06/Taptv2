@@ -1,16 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-// Debug: Log if user is already authenticated
+// Check if user is already logged in
 const userCookie = Astro.cookies.get('user');
-console.log('Existing user cookie:', userCookie?.value);
-
-// If user is already logged in, redirect to admin
 if (userCookie?.value) {
-  const user = JSON.parse(userCookie.value);
-  console.log('User already logged in:', user);
-  if (user.role === 'admin') {
-    return Astro.redirect('/admin');
+  try {
+    const user = JSON.parse(userCookie.value);
+    if (user.role === 'admin') {
+      return Astro.redirect('/admin');
+    }
+  } catch (error) {
+    console.error('Error parsing user cookie:', error);
   }
 }
 ---
@@ -81,18 +81,14 @@ if (userCookie?.value) {
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const formData = new FormData(form);
-    const email = formData.get('email')?.toString();
-    const password = formData.get('password')?.toString();
-
-    if (!email || !password) {
-      showError('Please fill in all fields');
-      return;
-    }
-
     try {
-      if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
-        throw new Error('Missing Supabase environment variables');
+      const formData = new FormData(form);
+      const email = formData.get('email')?.toString();
+      const password = formData.get('password')?.toString();
+
+      if (!email || !password) {
+        showError('Please fill in all fields');
+        return;
       }
 
       const supabase = createClient(
@@ -100,7 +96,6 @@ if (userCookie?.value) {
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY
       );
 
-      // Sign in with email and password
       const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -134,7 +129,7 @@ if (userCookie?.value) {
         session: session.access_token
       };
 
-      // Store user session in cookies with proper attributes
+      // Store user session in cookies
       document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Lax`;
       
       // Redirect to admin dashboard
