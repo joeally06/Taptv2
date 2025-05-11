@@ -8,6 +8,24 @@ export const GET: APIRoute = async () => {
   };
 
   try {
+    // First check if there's an active session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    if (!session) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'No active session - user is not authenticated'
+        }),
+        { status: 401, headers }
+      );
+    }
+
+    // If we have a session, proceed to get the user
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error) {
