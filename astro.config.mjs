@@ -11,7 +11,7 @@ export default defineConfig({
     host: true
   },
   devToolbar: {
-    enabled: false // Temporarily disable dev toolbar to prevent module loading issues
+    enabled: true // Re-enable dev toolbar
   },
   vite: {
     build: {
