@@ -9,7 +9,7 @@ if (userCookie?.value) {
 ---
 
 <Layout title="Login">
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -17,9 +17,9 @@ if (userCookie?.value) {
         </h2>
       </div>
       
-      <div id="debug-panel" class="bg-gray-100 p-4 rounded-md text-sm font-mono overflow-auto max-h-48 hidden">
+      <div id="debug-panel" class="bg-gray-100 p-4 rounded-md text-sm font-mono overflow-auto max-h-96">
         <div class="flex justify-between items-center mb-2">
-          <h3 class="font-bold">Debug Log</h3>
+          <h3 class="font-bold">Authentication Debug Log</h3>
           <button id="clear-debug" class="text-xs text-gray-600 hover:text-gray-800">Clear</button>
         </div>
         <div id="debug-log" class="space-y-1"></div>
@@ -53,19 +53,6 @@ if (userCookie?.value) {
           </div>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <input
-              id="show-debug"
-              type="checkbox"
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <label for="show-debug" class="ml-2 block text-sm text-gray-900">
-              Show debug info
-            </label>
-          </div>
-        </div>
-
         <div>
           <button
             type="submit"
@@ -75,6 +62,11 @@ if (userCookie?.value) {
           </button>
         </div>
       </form>
+
+      <div id="session-info" class="mt-4 p-4 bg-gray-100 rounded-md hidden">
+        <h3 class="font-bold mb-2">Current Session Info</h3>
+        <pre id="session-data" class="text-xs overflow-auto"></pre>
+      </div>
     </div>
   </div>
 </Layout>
@@ -84,10 +76,10 @@ if (userCookie?.value) {
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById('error-message');
-  const debugPanel = document.getElementById('debug-panel');
   const debugLog = document.getElementById('debug-log');
-  const showDebugCheckbox = document.getElementById('show-debug') as HTMLInputElement;
   const clearDebugButton = document.getElementById('clear-debug');
+  const sessionInfo = document.getElementById('session-info');
+  const sessionData = document.getElementById('session-data');
 
   function showError(message: string) {
     if (errorMessage) {
@@ -102,25 +94,53 @@ if (userCookie?.value) {
     }
   }
 
-  function addDebugLog(message: string, type: 'info' | 'error' = 'info') {
+  function addDebugLog(message: string, type: 'info' | 'error' | 'success' = 'info') {
     if (debugLog) {
       const entry = document.createElement('div');
-      entry.className = `text-xs ${type === 'error' ? 'text-red-600' : 'text-gray-600'}`;
-      entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      entry.className = `text-xs ${
+        type === 'error' ? 'text-red-600' : 
+        type === 'success' ? 'text-green-600' : 
+        'text-gray-600'
+      }`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
       debugLog.appendChild(entry);
       debugLog.scrollTop = debugLog.scrollHeight;
     }
   }
 
-  showDebugCheckbox?.addEventListener('change', () => {
-    if (debugPanel) {
-      debugPanel.classList.toggle('hidden', !showDebugCheckbox.checked);
+  function updateSessionInfo(session: any) {
+    if (sessionInfo && sessionData) {
+      sessionInfo.classList.remove('hidden');
+      sessionData.textContent = JSON.stringify(session, null, 2);
     }
-  });
+  }
 
   clearDebugButton?.addEventListener('click', () => {
     if (debugLog) {
       debugLog.innerHTML = '';
+    }
+  });
+
+  // Check for existing session on page load
+  window.addEventListener('load', async () => {
+    try {
+      addDebugLog('Checking for existing session...');
+      const supabase = createClient(
+        import.meta.env.PUBLIC_SUPABASE_URL,
+        import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+      );
+
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        addDebugLog(`Session check error: ${error.message}`, 'error');
+      } else if (session) {
+        addDebugLog('Found existing session', 'success');
+        updateSessionInfo(session);
+      } else {
+        addDebugLog('No existing session found');
+      }
+    } catch (error) {
+      addDebugLog(`Session check failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   });
 
@@ -135,7 +155,7 @@ if (userCookie?.value) {
 
       if (!email || !password) {
         showError('Please fill in all fields');
-        addDebugLog('Missing email or password', 'error');
+        addDebugLog('Login attempt failed: Missing email or password', 'error');
         return;
       }
 
@@ -145,7 +165,7 @@ if (userCookie?.value) {
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY
       );
 
-      addDebugLog('Attempting sign in...');
+      addDebugLog(`Attempting sign in for ${email}...`);
       const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -161,7 +181,9 @@ if (userCookie?.value) {
         throw new Error('Authentication failed');
       }
 
-      addDebugLog('Sign in successful, getting user data...');
+      addDebugLog('Sign in successful, getting user data...', 'success');
+      updateSessionInfo(session);
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
@@ -169,15 +191,15 @@ if (userCookie?.value) {
         throw userError || new Error('Failed to get user data');
       }
 
-      addDebugLog(`User metadata: ${JSON.stringify(user.user_metadata)}`);
+      addDebugLog(`User metadata: ${JSON.stringify(user.user_metadata)}`, 'info');
       const isAdmin = user.user_metadata?.role === 'admin';
       
       if (!isAdmin) {
-        addDebugLog('User is not an admin', 'error');
+        addDebugLog('Access denied: User is not an admin', 'error');
         throw new Error('Access denied: User is not an admin');
       }
 
-      addDebugLog('Admin access confirmed, redirecting...');
+      addDebugLog('Admin access confirmed, redirecting...', 'success');
       window.location.href = '/admin';
     } catch (error) {
       console.error('Login error:', error);
