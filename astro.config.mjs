@@ -4,12 +4,20 @@ import tailwind from '@astrojs/tailwind';
 export default defineConfig({
   output: 'server',
   integrations: [tailwind()],
-  devToolbar: {
-    enabled: true
-  },
   vite: {
+    optimizeDeps: {
+      exclude: ['@supabase/supabase-js']
+    },
     build: {
-      target: 'es2022'
+      target: 'esnext',
+      rollupOptions: {
+        external: ['@supabase/supabase-js']
+      }
+    },
+    server: {
+      watch: {
+        ignored: ['**/node_modules/**', '**/.git/**']
+      }
     }
   }
 });
