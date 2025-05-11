@@ -12,9 +12,6 @@ export default defineConfig({
     port: 4321,
     host: true
   },
-  devToolbar: {
-    enabled: false
-  },
   vite: {
     build: {
       target: 'es2022'
