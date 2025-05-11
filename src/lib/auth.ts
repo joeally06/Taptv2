@@ -1,37 +1,81 @@
-import { createClient } from '@libsql/client';
-import { join } from 'path';
-
-const dataDir = join(process.cwd(), 'data');
-const dbPath = join(dataDir, 'conference.db');
-const db = createClient({
-  url: `file:${dbPath}`
-});
+import { supabase } from './supabase';
+import { setSessionCookie, clearSessionCookie } from './session';
 
 export async function authenticateUser(email: string, password: string) {
-  const result = await db.execute({
-    sql: 'SELECT * FROM users WHERE email = ? AND password = ?',
-    args: [email, password]
-  });
-  
-  return result.rows[0] || null;
+  try {
+    console.log('Attempting authentication for:', email);
+    
+    const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (signInError) {
+      console.error('Sign in error:', signInError);
+      throw signInError;
+    }
+
+    if (!session?.user) {
+      console.error('No session or user data returned');
+      throw new Error('Authentication failed');
+    }
+
+    console.log('Session established:', session);
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Error getting user data:', userError);
+      throw userError || new Error('Failed to get user data');
+    }
+
+    console.log('User metadata:', user.user_metadata);
+
+    const isAdmin = user.user_metadata?.role === 'admin';
+    if (!isAdmin) {
+      console.error('User is not an admin:', user.user_metadata);
+      throw new Error('Access denied: User is not an admin');
+    }
+
+    setSessionCookie(session.access_token);
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: 'admin',
+      session: session.access_token
+    };
+  } catch (error) {
+    console.error('Authentication process failed:', error);
+    throw error;
+  }
 }
 
-export async function createUser(email: string, password: string, role: string = 'user') {
-  const id = 'user-' + Math.random().toString(36).substr(2, 9);
-
-  await db.execute({
-    sql: `INSERT INTO users (id, email, password, role) VALUES (?, ?, ?, ?)`,
-    args: [id, email, password, role]
-  });
-
-  return { id, email, role };
+export async function signOut() {
+  try {
+    await supabase.auth.signOut();
+    clearSessionCookie();
+    return true;
+  } catch (error) {
+    console.error('Sign out error:', error);
+    return false;
+  }
 }
 
 export async function isAdmin(userId: string) {
-  const result = await db.execute({
-    sql: 'SELECT role FROM users WHERE id = ?',
-    args: [userId]
-  });
-  
-  return result.rows[0]?.role === 'admin';
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+
+    const isAdmin = user.user_metadata?.role === 'admin';
+    console.log('Admin check result:', { userId, isAdmin, metadata: user.user_metadata });
+    return isAdmin;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
 }

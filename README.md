@@ -4,18 +4,24 @@ The official website for the Tennessee Association of Pupil Transportation (TAPT
 
 ## 🚀 Features
 
-- Conference registration system
+- Conference registration and management
 - Regional luncheon registration
-- Hall of Fame nominations
+- Hall of Fame nominations and member directory
 - Board member directory
 - Resource library
 - Administrative dashboard
+- User authentication and role-based access
+- Secure database integration
 
 ## 🛠️ Tech Stack
 
-- [Astro](https://astro.build) - Static site generator
+- [Astro](https://astro.build) - Web framework for content-focused websites
 - [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
-- [LibSQL](https://github.com/libsql/libsql) - SQLite-compatible database for local and production use
+- [Supabase](https://supabase.com) - Open source Firebase alternative
+  - Authentication
+  - PostgreSQL Database
+  - Row Level Security
+- TypeScript - Type-safe JavaScript
 
 ## 📦 Dependencies
 
@@ -24,7 +30,7 @@ The official website for the Tennessee Association of Pupil Transportation (TAPT
   "dependencies": {
     "astro": "^5.2.5",
     "@astrojs/tailwind": "^5.1.0",
-    "@libsql/client": "^0.5.6",
+    "@supabase/supabase-js": "^2.39.0",
     "tailwindcss": "^3.4.1"
   }
 }
@@ -37,7 +43,13 @@ The official website for the Tennessee Association of Pupil Transportation (TAPT
    ```bash
    npm install
    ```
-3. Start the development server:
+3. Set up environment variables:
+   Create a `.env` file with:
+   ```
+   PUBLIC_SUPABASE_URL=your_supabase_url
+   PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+4. Start the development server:
    ```bash
    npm run dev
    ```
@@ -54,7 +66,20 @@ The official website for the Tennessee Association of Pupil Transportation (TAPT
 
 ## 🗄️ Database
 
-This project uses LibSQL, a SQLite-compatible database that automatically creates a local `conference.db` file when you first run the application. No additional configuration is required for development.
+This project uses Supabase for data storage and authentication:
+
+- PostgreSQL database with Row Level Security
+- Built-in authentication
+- Secure API access
+- Real-time capabilities
+- Type-safe database operations
+
+## 🔐 Authentication
+
+- Email/password authentication
+- Role-based access control
+- Secure session management
+- Protected admin routes
 
 ## 📄 License
 

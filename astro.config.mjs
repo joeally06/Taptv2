@@ -6,8 +6,12 @@ import tailwind from '@astrojs/tailwind';
 export default defineConfig({
   output: 'server',
   integrations: [tailwind()],
+  server: {
+    port: 4321,
+    host: true
+  },
   devToolbar: {
-    enabled: false  // Temporarily disable dev toolbar to work around fetch error
+    enabled: false
   },
   vite: {
     build: {
@@ -15,16 +19,26 @@ export default defineConfig({
     },
     server: {
       hmr: {
-        timeout: 120000
+        timeout: 300000
       },
       fs: {
-        allow: ['.']
+        strict: false,
+        allow: ['.', 'node_modules']
+      },
+      watch: {
+        usePolling: true,
+        interval: 1000
       }
     },
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2022'
-      }
-    }
+      },
+      force: true,
+      exclude: [],
+      include: []
+    },
+    clearScreen: false,
+    cacheDir: '.vite'
   }
 });
