@@ -171,3 +171,18 @@ export async function createScholarshipApplication(data: any) {
 
   return application;
 }
+
+export async function createRegistration(data: any) {
+  const { data: registration, error } = await supabase
+    .from('registrations')
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating registration:', error);
+    throw error;
+  }
+
+  return registration;
+}
