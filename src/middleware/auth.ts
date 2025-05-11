@@ -1,7 +1,7 @@
 import type { MiddlewareResponseHandler } from 'astro';
 import { supabase } from '../lib/supabase';
 
-export const authMiddleware: MiddlewareResponseHandler = async ({ request, redirect, locals }) => {
+export const authMiddleware: MiddlewareResponseHandler = async ({ request, locals }) => {
   // Skip auth check for public routes and static assets
   const url = new URL(request.url);
   const publicPaths = [
@@ -15,7 +15,7 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
   ];
   
   if (publicPaths.some(path => url.pathname.startsWith(path))) {
-    return;
+    return new Response(null, { status: 200 });
   }
 
   // Get auth token from cookie
@@ -23,7 +23,12 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
     .find(c => c.trim().startsWith('sb-access-token='));
 
   if (!authCookie) {
-    return redirect('/login');
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': '/login'
+      }
+    });
   }
 
   const token = authCookie.split('=')[1].trim();
@@ -32,8 +37,10 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
-      return redirect('/login', {
+      return new Response(null, {
+        status: 302,
         headers: {
+          'Location': '/login',
           'Set-Cookie': 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=lax'
         }
       });
@@ -43,7 +50,12 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
     if (url.pathname.startsWith('/admin')) {
       const isAdmin = user.user_metadata?.role === 'admin';
       if (!isAdmin) {
-        return redirect('/');
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': '/'
+          }
+        });
       }
     }
 
@@ -54,9 +66,14 @@ export const authMiddleware: MiddlewareResponseHandler = async ({ request, redir
       role: user.user_metadata?.role || 'user'
     };
 
-    return;
+    return new Response(null, { status: 200 });
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return redirect('/login');
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': '/login'
+      }
+    });
   }
 };
