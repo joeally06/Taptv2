@@ -34,6 +34,7 @@ export interface BoardMember {
 export interface User {
   id: string;
   role: 'user' | 'admin';
+  email: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -47,4 +48,57 @@ export interface HallOfFameNomination {
   district: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface LuncheonRegistration {
+  id: string;
+  first_name: string;
+  last_name: string;
+  job_title: string;
+  district: string;
+  department_location: string;
+  email: string;
+  phone: string;
+  group_size: number;
+  location: string;
+  created_at?: string;
+}
+
+export interface ScholarshipApplication {
+  id: string;
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+  email: string;
+  mobile: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  high_school: string;
+  school_district: string;
+  graduation_year: number;
+  gpa?: number;
+  act_year?: number;
+  act_score?: number;
+  essay: string;
+  created_at?: string;
+}
+
+export interface Registration {
+  id: string;
+  organization: string;
+  total_amount: number;
+  conference_id: string;
+  created_at?: string;
+  attendees: Array<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+  }>;
 }
